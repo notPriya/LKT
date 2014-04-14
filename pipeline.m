@@ -8,25 +8,21 @@ end
 start = 1;
 n = 50; %(size(frames, 4)-1)
 
-% The template is basically the whole image.
-rect = [50 50 size(frames, 2)-50 size(frames, 1)-50];
+% The initial assumption is that we havent transformed.
+M = eye(3,3);
 
-TrackedObject = zeros(n, 4);
-TrackedObject(1, :) = rect;
+TrackedObject = zeros(3, 3, n);
 
 %% For each image run the LKT
 templateData = [];
 for i = start:start+n-1
     % Run Lucas-Kanade Tracker 
-    [u, v, templateData] = LucasKanade(frames(:, :, :, i), ...
-        frames(:, :, :, i+1), ...
-        rect, templateData);
-    
-    % Update rectangle based on motion
-    rect = rect + [u v u v];
+    [M, templateData] = LucasKanadeAffine(frames(50:end-50, 50:end-50, :, i), ...
+        frames(50:end-50, 50:end-50, :, i+1), ...
+        M, templateData);
     
     % Add to result
-    TrackedObject(i-start+2, :) = rect;
+    TrackedObject(:, :, i-start+2) = M;
 end
 
 %% Save off the tracked information
@@ -37,13 +33,16 @@ end
 for i = start:start+n-1
     % Extract the image.
     I = double(rgb2gray(frames(:,:,:,i)));
+
+    % Determine the optimal affine transform.
+    M = TrackedObject(:, :, i);
     
-    % Interpolate the rectangle coordinates.
-    rect = TrackedObject(i, :);
-    [xi, yi] = meshgrid(rect(1):rect(3), rect(2):rect(4));
+    % Warp the image to fit the template.
+    XiYi = M*[x(:) y(:) ones(length(x(:)), 1)]';
+    template = interp2(1:size(I, 2), 1:size(I, 1), I, XiYi(1, :)', XiYi(2, :)', 'linear', 0);
     
-    % Get the tracked template.
-    template = interp2(x, y, I, xi, yi);
+    % Smash it back into an image.
+    template = reshape(template, size(I, 1), size(I, 2));
     template = uint8(template);
 
     % Show the template.
