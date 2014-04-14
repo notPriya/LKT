@@ -1,4 +1,4 @@
-function [M, templateData] = LucasKanadeAffine(It, It1, M, templateData)
+function [M, templateData, errorCode] = LucasKanadeAffine(It, It1, M, templateData)
     % Convert image to usable format.
     I = double(rgb2gray(It));
     I2 = double(rgb2gray(It1));
@@ -21,6 +21,7 @@ function [M, templateData] = LucasKanadeAffine(It, It1, M, templateData)
         templateData.y = y;
 %         templateData.Ix = Ix;
 %         templateData.Iy = Iy;
+        templateData.template = I(:);
         templateData.A = [x.*Ix, y.*Ix, Ix, x.*Iy, y.*Iy, Iy];
     end
     
@@ -30,29 +31,25 @@ function [M, templateData] = LucasKanadeAffine(It, It1, M, templateData)
     % Fix errors in M by computing small changes to the parameters.
     threshold = .1;
     iterations = 0;
-    while (sum(abs(V)) > threshold || all(V==0)) && iterations < 10
+    max_iter = 20;
+    while (sum(abs(V)) > threshold || all(V==0)) && iterations < max_iter
         % Warp the image into the frame of the template.
         XiYi = M*[templateData.x templateData.y ones(length(templateData.x), 1)]';
         warpedI2 = interp2(1:size(I2, 2), 1:size(I2, 1), I2, XiYi(1, :)', XiYi(2, :)', 'linear', NaN);
-
-        % Convert I to a column vector.
-        warpedI = I(:);
 
         % Find NaN in the warped I2
         index = find(~isnan(warpedI2));
                 
         % Drop all Nan's.
-        x = templateData.x(index);
-        y = templateData.y(index);
         warpedI2 = warpedI2(index);
-        warpedI = warpedI(index);
+        warpedTemplate = templateData.template(index);
 
         % Recompute Image gradient and Hessian with missing points.
         A = templateData.A(index, :);
         ATA = A'*A;
         
         % Compute image error.
-        b = warpedI2 - warpedI;
+        b = warpedI2 - warpedTemplate;
 
         % Compute ATb
         ATb = A'*b;
@@ -69,4 +66,7 @@ function [M, templateData] = LucasKanadeAffine(It, It1, M, templateData)
         % Count the number of iterations.
         iterations = iterations + 1;
     end
+
+    % Let the calling function know if we capped out at max iterations.
+    errorCode = iterations == max_iter;
 end

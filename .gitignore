@@ -213,3 +213,24 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#############
+## Matlab
+#############
+
+# Matlab temp files
+*.asv
+# Matlab data files
+*.mat
+# Matlab mex files
+*.mexa64
+
+#############
+## Junk Folders
+#############
+
+old code/
+results/
+old data/
+*_result.avi
+*.jpg
