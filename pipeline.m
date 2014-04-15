@@ -5,8 +5,8 @@ if ~exist('frames', 'var')
     load 'pipe1_clean.mat';
 end
 
-start = 100;
-n = 100; %(size(frames, 4)-1)
+start = 1;
+n = 200; %(size(frames, 4)-1)
 
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
@@ -21,11 +21,6 @@ for i = start:start+n-1
         LucasKanadeAffine(frames(50:end-50, 50:end-50, :, i), ...
                           frames(50:end-50, 50:end-50, :, i+1), ...
                           M, templateData);
-    
-    if error
-        mystring = sprintf('Max number of iterations hit on frame %d', i+1);
-        disp(mystring);
-    end
     
     % Add to result
     TrackedObject(:, :, i-start+1) = M;
@@ -45,19 +40,17 @@ for i = start:start+n-1
     M = TrackedObject(:, :, i-start+1);
     
     % Warp the image to fit the template.
-    XiYi = M*[x(:) y(:) ones(length(x(:)), 1)]';
-    template = interp2(1:size(I, 2), 1:size(I, 1), I, XiYi(1, :)', XiYi(2, :)', 'linear', 0);
-    
+    warpedI2 = imwarp(I, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+
     % Smash it back into an image.
-    template = reshape(template, size(I, 1), size(I, 2));
     template = uint8(template);
 
-%     % Show the template.
-%     subplot(2, 1, 1);
-%     imshow(template);
-%     
-%     % Show deviations from the original template.
-%     subplot(2, 1, 2);
+    % Show the template.
+    subplot(2, 1, 1);
+    imshow(template);
+    
+    % Show deviations from the original template.
+    subplot(2, 1, 2);
     imagesc(T - template);
 
     pause(0.1);

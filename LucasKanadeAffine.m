@@ -1,4 +1,4 @@
-function [M, templateData, errorCode] = LucasKanadeAffine(It, It1, M, templateData)
+function [M, templateData, error] = LucasKanadeAffine(It, It1, M, templateData)
     % Convert image to usable format.
     I = double(rgb2gray(It));
     I2 = double(rgb2gray(It1));
@@ -19,24 +19,22 @@ function [M, templateData, errorCode] = LucasKanadeAffine(It, It1, M, templateDa
         % Save off the template information into the template data struct.
         templateData.x = x;
         templateData.y = y;
-%         templateData.Ix = Ix;
-%         templateData.Iy = Iy;
         templateData.template = I(:);
         templateData.A = [x.*Ix, y.*Ix, Ix, x.*Iy, y.*Iy, Iy];
     end
     
     % Compute the inititial parameters.
-    V = [M(1,1)-1 M(1,2) M(1,3) M(2,1) M(2,2)-1 M(2,3)];    
+    V = [1 1 1 1 1 1];    
     
     % Fix errors in M by computing small changes to the parameters.
     threshold = .1;
-    iterations = 0;
-    max_iter = 20;
-    while (sum(abs(V)) > threshold || all(V==0)) && iterations < max_iter
+    error = [];
+    % Stop if we are not updating and the error is not still decreasing.
+    while (sum(abs(V)) > threshold) || (length(error) > 2 && error(end) < error(end-1))
         % Warp the image into the frame of the template.
-        XiYi = M*[templateData.x templateData.y ones(length(templateData.x), 1)]';
-        warpedI2 = interp2(1:size(I2, 2), 1:size(I2, 1), I2, XiYi(1, :)', XiYi(2, :)', 'linear', NaN);
-
+        warpedI2 = imwarp(I2, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+        warpedI2 = warpedI2(:);
+        
         % Find NaN in the warped I2
         index = find(~isnan(warpedI2));
                 
@@ -50,6 +48,7 @@ function [M, templateData, errorCode] = LucasKanadeAffine(It, It1, M, templateDa
         
         % Compute image error.
         b = warpedI2 - warpedTemplate;
+        error = [error; sum(abs(b))];
 
         % Compute ATb
         ATb = A'*b;
@@ -61,12 +60,6 @@ function [M, templateData, errorCode] = LucasKanadeAffine(It, It1, M, templateDa
         M1 = [1+V(1) V(2) V(3); V(4) 1+V(5) V(6); 0 0 1];
         
         % Update the existing warp.
-        M = M / M1;
-        
-        % Count the number of iterations.
-        iterations = iterations + 1;
+        M = M1 * M;        
     end
-
-    % Let the calling function know if we capped out at max iterations.
-    errorCode = iterations == max_iter;
 end
