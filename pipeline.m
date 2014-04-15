@@ -12,18 +12,23 @@ n = 200; %(size(frames, 4)-1)
 M = eye(3,3);
 
 % Set the kind of warp we are using.
-warp = getAffineWarp();
+warp = getRigidBodyWarp();
 
 TrackedObject = zeros(3, 3, n);
 
 %% For each image run the LKT
 templateData = [];
 for i = start:start+n-1
+    tic;
     % Run Lucas-Kanade Tracker 
     [M, templateData, error] = ...
         LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
                     frames(50:end-50, 50:end-50, :, i+1), ...
                     M, warp, templateData);
+    toc;
+    
+    plot(error);
+    drawnow;
     
     % Add to result
     TrackedObject(:, :, i-start+1) = M;
@@ -43,7 +48,7 @@ for i = start:start+n-1
     M = TrackedObject(:, :, i-start+1);
     
     % Warp the image to fit the template.
-    template = warp(I, M);
+    template = warp.doWarp(I, M);
 
     % Smash it back into an image.
     template = uint8(template);

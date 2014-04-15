@@ -15,9 +15,9 @@ function Tfinal = rigidBodyComposition(T, Tnew)
 end
 
 function T = createRigidBodyTransform(p)
-    T = [1 -p(3) p(1); p(3) 1 p(2); 0 0 1];
+    T = [1+p(3) -p(4) p(1); p(4) 1+p(3) p(2); 0 0 1];
 end
 
 function A = getSpatialTensor(x, y, Ix, Iy)
-    A = [Ix Iy x.*Iy-y.*Ix];
+    A = [Ix Iy x.*Ix+y.*Iy x.*Iy-y.*Ix];
 end

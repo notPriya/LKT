@@ -10,11 +10,15 @@ end
 
 I = frames(50:end-50, 50:end-50, :, 1);
 
-warp = getAffineWarp();
-
 threshold = .1;
 
-%% Test the trivial cases.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Test the Affine Warps.       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+warp = getAffineWarp();
+disp('Starting Affine Warp Tests');
+
+% Test the trivial cases.
 
 % Set up the identity warp.
 A = eye(3);
@@ -31,7 +35,7 @@ if ~all(all(M == A'))
    disp('Identity Test Failed'); 
 end
 
-%% Test the non-trivial cases.
+% Test the non-trivial cases.
 
 % Setup some non-trivial warp.
 B = A + [.01*randn(3,2) zeros(3, 1)];
@@ -52,7 +56,7 @@ if sum(sum(abs(M - B'))) > threshold
    disp('Non-trivial Hard Test Failed');     
 end
 
-%% Test a more difficult case.
+% Test a more difficult case.
 
 % Setup an even harder warp.
 C = A + [.1*randn(3,2) zeros(3, 1)];
@@ -77,6 +81,61 @@ M = LucasKanade(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warp, []);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Harder Test Failed');     
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Test the Rigid Body Warps.   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+warp = getRigidBodyWarp();
+disp('Starting Rigid Body Warp Tests');
+
+% Test the trivial cases.
+
+% Set up the identity warp.
+A = eye(3);
+tform = affine2d(A);
+
+% Transform the image.
+I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
+
+% Run Lucas Kanade.
+M = LucasKanade(I2, I, A, warp, []);
+
+% Show results of test.
+if ~all(all(M == A))
+   disp('Identity Test Failed'); 
+end
+
+%% Test the non-trivial cases.
+
+% Setup some non-trivial warp.
+p = .1*randn(4, 1);
+B = warp.newWarp(p);
+tform2 = affine2d(B');
+
+% Transform the image.
+I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
+imshow(I2);
+drawnow;
+
+[M, ~, error] = LucasKanade(I2, I, B, warp, []);
+
+if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+   disp('Non-trivial Easy Test Failed');  
+end
+
+[M, ~, error] = LucasKanade(I2, I, eye(3), warp, []);
+
+if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+   disp('Non-trivial Hard Test Failed');     
+end
+
+badwarp = warp.newWarp(.1*randn(4, 1));
+
+[M, ~, error] = LucasKanade(I2, I, badwarp, warp, []);
+
+if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+   disp('Non-trivial Harder Test Failed');     
 end
 
 %% Clean up Environment.
