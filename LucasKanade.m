@@ -1,4 +1,4 @@
-function [M, templateData, error] = LucasKanadeAffine(It, It1, M, warpFn, templateData)
+function [M, templateData, error] = LucasKanade(It, It1, M, warpFn, templateData)
     % Convert image to usable format.
     I = double(rgb2gray(It));
     I2 = double(rgb2gray(It1));

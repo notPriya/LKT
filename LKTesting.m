@@ -24,7 +24,7 @@ tform = affine2d(A);
 I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
 
 % Run Lucas Kanade.
-M = LucasKanadeAffine(I2, I, A', warpFn, []);
+M = LucasKanade(I2, I, A', warpFn, []);
 
 % Show results of test.
 if ~all(all(M == A'))
@@ -40,13 +40,13 @@ tform2 = affine2d(B);
 % Transform the image.
 I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
 
-M = LucasKanadeAffine(I2, I, B', warpFn, []);
+M = LucasKanade(I2, I, B', warpFn, []);
 
 if sum(sum(abs(M - B'))) > threshold
    disp('Non-trivial Easy Test Failed');  
 end
 
-M = LucasKanadeAffine(I2, I, eye(3), warpFn, []);
+M = LucasKanade(I2, I, eye(3), warpFn, []);
 
 if sum(sum(abs(M - B'))) > threshold
    disp('Non-trivial Hard Test Failed');     
@@ -61,19 +61,19 @@ tform3 = affine2d(C);
 % Transform the image.
 I2 = imwarp(I, tform3, 'OutputView', imref2d(size(I)));
 
-M = LucasKanadeAffine(I2, I, C', warpFn, []);
+M = LucasKanade(I2, I, C', warpFn, []);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Easy Test Failed');     
 end
 
-M = LucasKanadeAffine(I2, I, eye(3), warpFn, []);
+M = LucasKanade(I2, I, eye(3), warpFn, []);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Hard Test Failed');     
 end
 
-M = LucasKanadeAffine(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warpFn, []);
+M = LucasKanade(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warpFn, []);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Harder Test Failed');     
