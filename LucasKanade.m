@@ -1,4 +1,4 @@
-function [M, templateData, error] = LucasKanade(It, It1, M, warpFn, templateData)
+function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData)
     % Convert image to usable format.
     I = double(rgb2gray(It));
     I2 = double(rgb2gray(It1));
@@ -20,7 +20,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warpFn, templateData
         templateData.x = x;
         templateData.y = y;
         templateData.template = I(:);
-        templateData.A = [x.*Ix, y.*Ix, Ix, x.*Iy, y.*Iy, Iy];
+        templateData.A = warp.gradient(x, y, Ix, Iy);
     end
     
     % Compute the inititial parameters.
@@ -33,7 +33,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warpFn, templateData
     % its not super high.
     while (sum(abs(V)) > threshold) || (length(error) >= 2 && error(end) < error(end-1)) || (length(error) == 1 && error > 10^4)
         % Warp the image into the frame of the template.
-        warpedI2 = warpFn(I2, M);
+        warpedI2 = warp.doWarp(I2, M);
         warpedI2 = warpedI2(:);
         
         % Find NaN in the warped I2
@@ -58,9 +58,9 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warpFn, templateData
         V = ATA\ATb;
 
         % Compute the new change in warp.
-        M1 = [1+V(1) V(2) V(3); V(4) 1+V(5) V(6); 0 0 1];
+        M1 = warp.newWarp(V);
         
         % Update the existing warp.
-        M = M1 * M;        
+        M = warp.compose(M, M1);        
     end
 end

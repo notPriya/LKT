@@ -12,7 +12,7 @@ n = 200; %(size(frames, 4)-1)
 M = eye(3,3);
 
 % Set the kind of warp we are using.
-warpFn = @affineWarp;
+warp = getAffineWarp();
 
 TrackedObject = zeros(3, 3, n);
 
@@ -23,7 +23,7 @@ for i = start:start+n-1
     [M, templateData, error] = ...
         LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
                     frames(50:end-50, 50:end-50, :, i+1), ...
-                    M, warpFn, templateData);
+                    M, warp, templateData);
     
     % Add to result
     TrackedObject(:, :, i-start+1) = M;
@@ -43,7 +43,7 @@ for i = start:start+n-1
     M = TrackedObject(:, :, i-start+1);
     
     % Warp the image to fit the template.
-    template = warpFn(I, M);
+    template = warp(I, M);
 
     % Smash it back into an image.
     template = uint8(template);
