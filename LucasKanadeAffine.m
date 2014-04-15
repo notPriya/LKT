@@ -1,4 +1,4 @@
-function [M, templateData, error] = LucasKanadeAffine(It, It1, M, templateData)
+function [M, templateData, error] = LucasKanadeAffine(It, It1, M, warpFn, templateData)
     % Convert image to usable format.
     I = double(rgb2gray(It));
     I2 = double(rgb2gray(It1));
@@ -33,7 +33,7 @@ function [M, templateData, error] = LucasKanadeAffine(It, It1, M, templateData)
     % its not super high.
     while (sum(abs(V)) > threshold) || (length(error) >= 2 && error(end) < error(end-1)) || (length(error) == 1 && error > 10^4)
         % Warp the image into the frame of the template.
-        warpedI2 = imwarp(I2, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+        warpedI2 = warpFn(I2, M);
         warpedI2 = warpedI2(:);
         
         % Find NaN in the warped I2

@@ -11,6 +11,9 @@ n = 200; %(size(frames, 4)-1)
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 
+% Set the kind of warp we are using.
+warpFn = @affineWarp;
+
 TrackedObject = zeros(3, 3, n);
 
 %% For each image run the LKT
@@ -20,7 +23,7 @@ for i = start:start+n-1
     [M, templateData, error] = ...
         LucasKanadeAffine(frames(50:end-50, 50:end-50, :, i), ...
                           frames(50:end-50, 50:end-50, :, i+1), ...
-                          M, templateData);
+                          M, warpFn, templateData);
     
     % Add to result
     TrackedObject(:, :, i-start+1) = M;
@@ -40,7 +43,7 @@ for i = start:start+n-1
     M = TrackedObject(:, :, i-start+1);
     
     % Warp the image to fit the template.
-    template = imwarp(I, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+    template = warpFn(I, M);
 
     % Smash it back into an image.
     template = uint8(template);
