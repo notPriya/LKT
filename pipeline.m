@@ -40,7 +40,7 @@ for i = start:start+n-1
     M = TrackedObject(:, :, i-start+1);
     
     % Warp the image to fit the template.
-    warpedI2 = imwarp(I, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+    template = imwarp(I, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
 
     % Smash it back into an image.
     template = uint8(template);

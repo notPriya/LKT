@@ -26,11 +26,12 @@ function [M, templateData, error] = LucasKanadeAffine(It, It1, M, templateData)
     % Compute the inititial parameters.
     V = [1 1 1 1 1 1];    
     
-    % Fix errors in M by computing small changes to the parameters.
     threshold = .1;
     error = [];
-    % Stop if we are not updating and the error is not still decreasing.
-    while (sum(abs(V)) > threshold) || (length(error) > 2 && error(end) < error(end-1))
+    % Fix errors in M by computing small changes to the parameters.
+    % Stop if we are not updating and the error is not still decreasing and
+    % its not super high.
+    while (sum(abs(V)) > threshold) || (length(error) >= 2 && error(end) < error(end-1)) || (length(error) == 1 && error > 10^4)
         % Warp the image into the frame of the template.
         warpedI2 = imwarp(I2, affine2d(M'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
         warpedI2 = warpedI2(:);

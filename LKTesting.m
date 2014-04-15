@@ -70,3 +70,13 @@ M = LucasKanadeAffine(I2, I, eye(3), []);
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Hard Test Failed');     
 end
+
+M = LucasKanadeAffine(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], []);
+
+if sum(sum(abs(M - C'))) > threshold
+   disp('Difficult Harder Test Failed');     
+end
+
+%% Clean up Environment.
+
+clear A B C tform tform2 tform3 M I I2 threshold;
