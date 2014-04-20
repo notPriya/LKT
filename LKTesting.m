@@ -106,7 +106,7 @@ if ~all(all(M == A))
    disp('Identity Test Failed'); 
 end
 
-%% Test the non-trivial cases.
+% Test the non-trivial cases.
 
 % Setup some non-trivial warp.
 p = .1*randn(4, 1);
@@ -120,13 +120,13 @@ drawnow;
 
 [M, ~, error] = LucasKanade(I2, I, B, warp, []);
 
-if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Easy Test Failed');  
 end
 
 [M, ~, error] = LucasKanade(I2, I, eye(3), warp, []);
 
-if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Hard Test Failed');     
 end
 
@@ -134,11 +134,44 @@ badwarp = warp.newWarp(.1*randn(4, 1));
 
 [M, ~, error] = LucasKanade(I2, I, badwarp, warp, []);
 
-if sum(sum(abs(M - B))) > threshold && error(end) > 10^5
+if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Harder Test Failed');     
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Test the Motion Estimation.  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+warp = getRigidBodyWarp();
+M = eye(3);
+templateData = [];
+
+%%
+I1 = frames(50:end-50, 50:end-50, :, 150);
+I2 = frames(50:end-50, 50:end-50, :, 200);
+
+[M, templateData, error] = LucasKanade(I1, I2, M, warp, templateData);
+
+alpha = M(1, 1)
+theta = atan2(M(2, 1)/alpha, 1);
+theta = theta*180/pi
+u = M(1, 3)/alpha
+v = M(2, 3)/alpha
+
+d = (1 - alpha)*510*(1/250)
+
+figure;
+subplot(2, 2, 1);
+imshow(I1);
+subplot(2, 2, 2);
+imshow(I2);
+subplot(2, 2, 3);
+meow = warp.doWarp(I2, M);
+imshow(meow);
+subplot(2, 2, 4);
+imshow(I1 - meow);
 
 %% Clean up Environment.
 disp('Testing Complete');
 
-clear A B C tform tform2 tform3 M I I2 threshold;
+clear A B C warp tform tform2 tform3 M I I2 threshold error I1 templateData alpha theta u v d meow;
