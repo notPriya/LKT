@@ -8,13 +8,21 @@ if ~exist('frames', 'var')
 end
 
 start = 1;
-n = 200; %(size(frames, 4)-1)
+n = (size(frames, 4)-1);
 
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
+
+% Get the odometry bounding box.
+if ~exist('odom_rect', 'var')
+    imshow(frames(:,:,:,5));
+    [x, y] = ginput(2);
+    odom_rect = [min(size(frames, 2)-100, max(1, x'-50)) ...
+                 min(size(frames, 1)-100, max(1, y'-50))];
+end
 
 TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
@@ -31,7 +39,7 @@ for i = start:start+n-1
     [M, templateData, error] = ...
         LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
                     frames(50:end-50, 50:end-50, :, i+1), ...
-                    M, warp, templateData);
+                    eye(3), warp, templateData, odom_rect);
     toc;
     
 %     % Plot the error function.
@@ -49,8 +57,9 @@ for i = start:start+n-1
     TrackedObject.template_pos(i+1, :) = TrackedObject.template_pos(i, :);
     
     % If we have moved past a threshold re-initialize the template.
-    if (TrackedObject.pos(i, 3) > distance_threshold)
+    if abs(TrackedObject.pos(i, 3)) > distance_threshold
         templateData = [];
+        M = eye(3);
         TrackedObject.template_pos(i+1, :) = TrackedObject.pos(i, :) + TrackedObject.template_pos(i, :);
     end
     
@@ -58,15 +67,15 @@ end
 
 % Calculate overall position of the robot.
 pos = TrackedObject.pos + TrackedObject.template_pos(1:end-1, :);
-plot3(pos(:, 1), pos(:, 2), pos(:, 3), 'k', 'LineWidth', 2);
+% plot3(pos(:, 1), pos(:, 2), pos(:, 3), 'k', 'LineWidth', 2);
 
 %% Save off the tracked information
 % save('trackCoordinates_real.mat', 'TrackedObject');
 
 %% Visualize
-for i = start:start+n-1
+for i = 1340:1580
     % Extract the image.
-    I = double(rgb2gray(frames(50:end-50,50:end-50,:,i+1)));
+    I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
     [x, y] = meshgrid(1:size(I, 2), 1:size(I, 1));
 
     % Determine the optimal affine transform.
@@ -88,8 +97,16 @@ for i = start:start+n-1
     subplot(2, 1, 2);
     imagesc(T - template);
 
-    pause(0.1);
+    pause(0.3);
 end
+
+%% Visualize the z-axis motion.
+
+figure;
+plot(pos(:, 3), 'b');
+hold on;
+plot(TrackedObject.template_pos(:, 3), 'r')
+plot(TrackedObject.pos(:, 3), 'g')
 
 %% Clean up environment.
 
