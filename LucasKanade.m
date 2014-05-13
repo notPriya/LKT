@@ -2,9 +2,6 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
     % Convert image to usable format.
     I2 = preprocessImage(It1);
     
-    % Create a mask for the odometry rectangle.
-    mask = zeros(size(I2));
-    mask(odom_rect(3):odom_rect(4), odom_rect(1):odom_rect(2)) = 1;
     
     if isempty(templateData)
         I = preprocessImage(It);
@@ -21,11 +18,16 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
         x = X(:);
         y = Y(:);
         
+        % Create a mask for the odometry rectangle.
+        mask = zeros(size(I2));
+        mask(odom_rect(3):odom_rect(4), odom_rect(1):odom_rect(2)) = 1;
+    
         % Save off the template information into the template data struct.
         templateData.x = x;
         templateData.y = y;
         templateData.template = I(:);
         templateData.A = warp.gradient(x, y, Ix, Iy);
+        templateData.mask = mask;
     end
     
     % Compute the inititial parameters.
@@ -41,7 +43,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
     % if we have maxed the number of iterations and the error hasnt gone
     % down enough.
     while ((sum(abs(V)) > threshold) && ...
-          (length(error) < 5 || error(end-1) - error(end) > .001*error(end))) || ...
+          (length(error) < 5 || error(end-1) - error(end) > 1000)) || ...  %.001*error(end))) || ...
           ((isempty(error) || error(end) > 5*10^6) && ...
           iteration < max_iteration)
         % Warp the image into the frame of the template.
@@ -52,7 +54,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
         warpedI2 = warpedI2(:);
         
         % Warp the odometry mask.
-        warpedMask = warp.doWarp(mask, M);
+        warpedMask = warp.doWarp(templateData.mask, M);
         warpedMask(isnan(warpedMask)) = 0;
         warpedMask = logical(warpedMask(:));
         

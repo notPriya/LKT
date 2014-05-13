@@ -61,8 +61,8 @@ for i = start:start+n-1
     TrackedObject.template_pos(i+1, :) = TrackedObject.template_pos(i, :);
     
     % If we got some bad data, get rid of it.
-    if abs(TrackedObject.pos(i, 3)) > 4*distance_threshold
-        M = eye(3);
+    if abs(TrackedObject.pos(i, 3)) > 1.5*distance_threshold
+        M = TrackedObject.M(:, :, i-start);  % Use the old M.
         TrackedObject.M(:, :, i-start+1) = M;
         TrackedObject.pos(i, :) = [M(1, 3)/alpha M(2, 3)/alpha (1 - alpha)*510*(1/250)];
         
@@ -108,7 +108,7 @@ if visualize
 
         % Show deviations from the original template.
         subplot(2, 1, 2);
-        imagesc(T - template);
+        imagesc(abs(T - template));
 
         pause(0.3);
     end
