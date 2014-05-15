@@ -8,7 +8,9 @@ function warp = getNonLinWarp()
 end
 
 function I2 = nonLinearWarp(I, T)
-    I2 = imwarp(I, affine2d(T'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+    % Put (0, 0) in the center of the image.
+    RI = imref2d(size(I), [-size(I, 2)/2 size(I, 2)/2], [-size(I, 1)/2 size(I, 1)/2]);    
+    I2 = imwarp(I, RI, affine2d(T'), 'OutputView', RI, 'FillValues', NaN);
 end
 
 function Tfinal = nonLinearComposition(T, Tnew)

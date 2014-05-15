@@ -13,8 +13,8 @@ function [M, error] = LucasKanadeNonLin(It, It1, M, warp, odom_rect)
     % from the optimizer. Instead of putting penalty terms in the
     % optimization function making cost more non-linear, we restrict the
     % solution set.
-    lb = [-10; -10; .2; -pi/2];
-    ub = [10; 10; 5; pi/2];
+    lb = [-100; -100; .1; -pi/2];
+    ub = [100; 100; 5; pi/2];
     
     % Options
     % Throttle max iter since we are close and havent got all day.
