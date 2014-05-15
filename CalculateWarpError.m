@@ -45,6 +45,6 @@ function error = CalculateWarpError(p, It, It1, warp, odom_rect)
     b = warpedI2 - warpedTemplate;
     
     % Error is weighted average between average pixel error and penalty for too many NaNs.
-    average_pixel_error = mean(abs(b));
+    average_pixel_error = mean(b.^2);
     error = average_pixel_error;
 end

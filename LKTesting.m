@@ -29,7 +29,7 @@ tform = affine2d(A);
 I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
 
 % Run Lucas Kanade.
-M = LucasKanade(I2, I, A', warp, []);
+M = LucasKanade(I2, I, A', warp, [], odom_rect);
 
 % Show results of test.
 if ~all(all(M == A'))
@@ -45,13 +45,13 @@ tform2 = affine2d(B);
 % Transform the image.
 I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
 
-M = LucasKanade(I2, I, B', warp, []);
+M = LucasKanade(I2, I, B', warp, [], odom_rect);
 
 if sum(sum(abs(M - B'))) > threshold
    disp('Non-trivial Easy Test Failed');  
 end
 
-M = LucasKanade(I2, I, eye(3), warp, []);
+M = LucasKanade(I2, I, eye(3), warp, [], odom_rect);
 
 if sum(sum(abs(M - B'))) > threshold
    disp('Non-trivial Hard Test Failed');     
@@ -66,19 +66,19 @@ tform3 = affine2d(C);
 % Transform the image.
 I2 = imwarp(I, tform3, 'OutputView', imref2d(size(I)));
 
-M = LucasKanade(I2, I, C', warp, []);
+M = LucasKanade(I2, I, C', warp, [], odom_rect);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Easy Test Failed');     
 end
 
-M = LucasKanade(I2, I, eye(3), warp, []);
+M = LucasKanade(I2, I, eye(3), warp, [], odom_rect);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Hard Test Failed');     
 end
 
-M = LucasKanade(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warp, []);
+M = LucasKanade(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warp, [], odom_rect);
 
 if sum(sum(abs(M - C'))) > threshold
    disp('Difficult Harder Test Failed');     
@@ -100,7 +100,7 @@ tform = affine2d(A);
 I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
 
 % Run Lucas Kanade.
-M = LucasKanade(I2, I, A, warp, []);
+M = LucasKanade(I2, I, A, warp, [], odom_rect);
 
 % Show results of test.
 if ~all(all(M == A))
@@ -119,13 +119,13 @@ I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
 imshow(I2);
 drawnow;
 
-[M, ~, error] = LucasKanade(I2, I, B, warp, []);
+[M, ~, error] = LucasKanade(I2, I, B, warp, [], odom_rect);
 
 if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Easy Test Failed');  
 end
 
-[M, ~, error] = LucasKanade(I2, I, eye(3), warp, []);
+[M, ~, error] = LucasKanade(I2, I, eye(3), warp, [], odom_rect);
 
 if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Hard Test Failed');     
@@ -133,7 +133,7 @@ end
 
 badwarp = warp.newWarp(.1*randn(4, 1));
 
-[M, ~, error] = LucasKanade(I2, I, badwarp, warp, []);
+[M, ~, error] = LucasKanade(I2, I, badwarp, warp, [], odom_rect);
 
 if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Harder Test Failed');     
