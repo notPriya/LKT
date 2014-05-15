@@ -9,6 +9,7 @@ if ~exist('frames', 'var')
 end
 
 I = frames(50:end-50, 50:end-50, :, 1);
+odom_rect = [1 1 1 1];
 
 threshold = .1;
 
@@ -136,6 +137,55 @@ badwarp = warp.newWarp(.1*randn(4, 1));
 
 if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Harder Test Failed');     
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Test the NonLinear Warps.   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+warp = getNonLinWarp();
+disp('Starting NonLinear Warp Tests');
+
+% Test the trivial cases.
+
+% Set up the identity warp.
+p = [0; 0; 1; 0];
+A = warp.newWarp(p);
+
+% Transform the image.
+I2 = warp.doWarp(I, A);
+
+% Run Lucas Kanade.
+M = LucasKanadeNonLin(I2, I, A, warp, odom_rect);
+
+% Show results of test.
+if sum(sum(abs(M - A))) > threshold
+   disp('Identity Test Failed'); 
+end
+
+% Test the non-trivial cases.
+
+% Setup some non-trivial warp.
+p = .1*randn(4, 1) + [0; 0; 1; 0];
+B = warp.newWarp(p);
+
+% Transform the image.
+I2 = warp.doWarp(I, B);
+imshow(I2);
+drawnow;
+
+[M, error] = LucasKanadeNonLin(I2, I, B, warp, odom_rect);
+
+if sum(sum(abs(M - B))) > threshold
+   disp('Non-trivial Easy Test Failed');  
+end
+
+% Perturb the warp.
+p2 = p + .05*randn(4, 1);
+B2 = warp.newWarp(p2);
+[M, error] = LucasKanadeNonLin(I2, I, B2, warp, odom_rect);
+
+if sum(sum(abs(M - B))) > threshold
+   disp('Non-trivial Hard Test Failed');     
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

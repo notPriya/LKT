@@ -31,7 +31,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
     end
     
     % Compute the inititial parameters.
-    V = [1 1 1 1 1 1];    
+    V = [1; 1; 1; 1];    
     
     threshold = .00001;
     error = [];
