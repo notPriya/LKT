@@ -9,15 +9,16 @@ if ~exist('frames', 'var')
     load([pipe_name '.mat']);
 end
 
-start = 1;
-n = (size(frames, 4)-1);
+start = 100;
+%n = (size(frames, 4)-1);
+n = 100;
 visualize = false;
 
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 
 % Set the kind of warp we are using.
-warp = getRigidBodyWarp();
+warp = getNonLinWarp();
 
 % Get the odometry bounding box.
 if ~exist('odom_rect', 'var')
@@ -29,33 +30,46 @@ if ~exist('odom_rect', 'var')
 end
 
 TrackedObject.M = zeros(3, 3, n);
-TrackedObject.error = cell(n, 1);
+TrackedObject.error = zeros(n, 1);
 TrackedObject.pos = zeros(n, 3);
-TrackedObject.template = cell(n, 1);
+TrackedObject.template = ones(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
 distance_threshold = .1;
 
 %% For each image run the LKT
-templateData = [];
+template_frame = start;
 for i = start:start+n-1
     index = i-start + 1;
-
+    
     tic;
     % Run Lucas-Kanade Tracker 
-    [M, templateData, error] = ...
-        LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
-                    frames(50:end-50, 50:end-50, :, i+1), ...
-                    M, warp, templateData, odom_rect);
+    [M, error] = ...
+        LucasKanadeNonLin(frames(50:end-50, 50:end-50, :, template_frame), ...
+                          frames(50:end-50, 50:end-50, :, i+1), ...
+                          M, warp, odom_rect);
     toc;
-        
+    
+    % Visualize M since this takes so damn long.
+    I = preprocessImage(frames(50:end-50, 50:end-50, :, template_frame));
+    I2 = preprocessImage(frames(50:end-50, 50:end-50, :, i+1));
+    template = warp.doWarp(I2, M);
+    template = uint8(template);
+    subplot(2, 1, 1);
+    imshow(template);
+    title(i);
+    subplot(2, 1, 2);
+    imagesc(abs(uint8(I) - template));
+    drawnow;
+   
+    
     % Get the scaling factor to estimate position.
     alpha = M(1, 1);
     
     % Add to result
     TrackedObject.M(:, :, index) = M;
-    TrackedObject.error{index} = error;
+    TrackedObject.error(index) = error;
     TrackedObject.pos(index, :) = [M(1, 3)/alpha M(2, 3)/alpha (1 - alpha)*510*(1/250)];
-    TrackedObject.template{index} = templateData;
+    TrackedObject.template(index) = template_frame;
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
     
     % If we got some bad data, get rid of it.
@@ -67,7 +81,7 @@ for i = start:start+n-1
         
     % If we have moved past a threshold re-initialize the template.
     elseif abs(TrackedObject.pos(index, 3)) > distance_threshold
-        templateData = [];
+        template_frame = i;
         M = eye(3);
         TrackedObject.template_pos(index+1, :) = TrackedObject.pos(index, :) + TrackedObject.template_pos(index, :);
     end
@@ -76,6 +90,7 @@ end
 
 % Calculate overall position of the robot.
 pos = TrackedObject.pos + TrackedObject.template_pos(1:end-1, :);
+% plot3(pos(:, 1), pos(:, 2), pos(:, 3), 'k', 'LineWidth', 2);
 
 %% Save off the tracked information
 % save('trackCoordinates_real.mat', 'TrackedObject');
@@ -83,13 +98,15 @@ pos = TrackedObject.pos + TrackedObject.template_pos(1:end-1, :);
 %% Visualize
 if visualize
     for i = start:start+n-1
+%     for i=133
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
         % Determine the optimal affine transform.
         M = TrackedObject.M(:, :, i-start+1);
-        T = TrackedObject.template{i-start+1}.template;
-        T = uint8(reshape(T, size(I, 1), size(I, 2)));
+        template_frame = TrackedObject.template(i-start+1);
+        T = preprocessImage(frames(50:end-50,50:end-50,:,template_frame));
+        T = uint8(T);
 
         % Warp the image to fit the template.
         template = warp.doWarp(I, M);
@@ -121,4 +138,4 @@ plot((ground_truth - ground_truth(start))/10, 'k')
 
 %% Clean up environment.
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth;
+clear I M T alpha distance_threshold error i template templateData x y template_frame index ground_truth;
