@@ -111,7 +111,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
         sigma = sqrt(covariance_posterior);
         
         % Show the image.
-%         imshow(I);
+        imshow(I);
         hold on;
         % Draw the center covariance.
         if found_circle
@@ -136,6 +136,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
             viscircles(state_posterior(1:2)', state_posterior(3)+2*sigma(3,3), 'EdgeColor', 'b','LineStyle','--');
             viscircles(state_posterior(1:2)', state_posterior(3), 'EdgeColor', 'b');
         end
+        drawnow;
     end
     
     

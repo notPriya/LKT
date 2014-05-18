@@ -15,6 +15,7 @@ end
 start = 1;
 n = (size(frames, 4)-1);
 visualize = false;
+evaluation = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the LKT variables %
@@ -100,10 +101,10 @@ for i = start:start+n-1
                     frames(50:end-50, 50:end-50, :, i+1), ...
                     M, warp, templateData, odom_rect);
     
-    % If we got some bad data, get rid of it.
-    if abs(TrackedObject.pos(index, 3)) > 1.5*distance_threshold
-        M = TrackedObject.M(:, :, index-1);  % Use the old M.
-    end
+%     % If we got some bad data, get rid of it.
+%     if abs(TrackedObject.lkt_pos(index, 3)-TrackedObject.template_pos(index, 3)) > 1.5*distance_threshold
+%         M = TrackedObject.M(:, :, index-1);  % Use the old M.
+%     end
             
     %%%%%%%%%%%%%%%%%%%%%
     % Joint Tracking
@@ -116,7 +117,7 @@ for i = start:start+n-1
         velocity = (centroid - circle.state(1:2))/100;
         circle.state(4:5) = velocity;
     end
-    [circle, ~] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, true);
+    [circle, ~] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
     toc;
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -131,9 +132,16 @@ for i = start:start+n-1
     ratio = pipe_radius/circle.state(3);
     
     % Convert measurements from pixels to deci-feet.
-    delta = [(circle.state(1) - size(I, 2)/2) * ratio ...
-             (circle.state(2) - size(I, 1)/2) * ratio ...
-             ratio * camera_f];
+    delta = .1* [(circle.state(1) - size(frames, 2)/2) * ratio ...
+                 (circle.state(2) - size(frames, 1)/2) * ratio ...
+                  ratio * camera_f];
+    
+    % Initialize the position.
+    if i==start
+        initial_pos = delta;
+    end 
+    
+    % Get the joint tracking position.
     jt_pos = initial_pos - delta;
     
     % Use the joint tracking if the circle is real and the position
@@ -164,10 +172,10 @@ for i = start:start+n-1
     % Updating the template.
     %%%%%%%%%%%%%%%%%%%%%
     % If we have moved past a threshold re-initialize the template.
-    if abs(TrackedObject.pos(index, 3)) > distance_threshold
+    if abs(TrackedObject.lkt_pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
         templateData = [];
         M = eye(3);
-        TrackedObject.template_pos(index+1, :) = pos;
+        TrackedObject.template_pos(index+1, :) = lkt_pos;
     end
     
     
@@ -188,7 +196,7 @@ for i = start:start+n-1
     
     % Update the initial position, once the circle is real.
     if circle.real && update_pos
-        initial_pos = pos;
+        initial_pos = pos+delta;
     end
 end
 
