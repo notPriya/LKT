@@ -35,6 +35,7 @@ if ~exist('odom_rect', 'var')
     odom_rect = [min(size(frames, 2)-100, max(1, x'-50)) ...
                  min(size(frames, 1)-100, max(1, y'-50))];
     odom_rect = int16(odom_rect);
+    clear x y;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,6 +63,7 @@ if ~exist('init_state', 'var')
     c = [x(1); y(1)];
     r = sqrt( (x(1)-x(2))^2 + (y(1)-y(2))^2 );
     init_state = [c; r; 0; 0; 0];
+    clear c r x y;
 end
 
 % Initialize circle.
@@ -77,13 +79,16 @@ update_pos = false;
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a structure for saving the results.
-TrackedObject.M = zeros(3, 3, n);
-TrackedObject.error = cell(n, 1);
 TrackedObject.lkt_pos = zeros(n, 3);
 TrackedObject.jt_pos = zeros(n, 3);
 TrackedObject.pos = zeros(n, 3);
+% LKT Results
+TrackedObject.M = zeros(3, 3, n);
+TrackedObject.error = cell(n, 1);
 TrackedObject.template = cell(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
+% Joint Tracking Results.
+TrackedObject.circles = cell(n, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -159,13 +164,17 @@ for i = start:start+n-1
     % Save Results.
     %%%%%%%%%%%%%%%%%%%%%
     % Add everything to the result
-    TrackedObject.M(:, :, index) = M;
-    TrackedObject.error{index} = error;
+    % Distance results
     TrackedObject.lkt_pos(index, :) = lkt_pos;
     TrackedObject.jt_pos(index, :) = jt_pos;
     TrackedObject.pos(index, :) = pos;
+    % LKT Results
+    TrackedObject.M(:, :, index) = M;
+    TrackedObject.error{index} = error;
     TrackedObject.template{index} = templateData;
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
+    % Joint tracking results
+    TrackedObject.circles{index} = circle;
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -226,6 +235,13 @@ if visualize
         subplot(2, 1, 1);
         imshow(template);
         title(i);
+        
+        % Draw the circles.
+        circle = TrackedObject.circles{i-start+1};
+        if circle.real
+            viscircles(circle.state(1:2)'-50, circle.state(3), 'EdgeColor', 'b');
+        end
+
 
         % Show deviations from the original template.
         subplot(2, 1, 2);
@@ -250,4 +266,4 @@ plot((ground_truth - ground_truth(start))/10, 'k')
 %% Clean up environment.       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth;
+clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio;
