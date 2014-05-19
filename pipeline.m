@@ -6,14 +6,15 @@ clc;
 addpath ./toolbox
 addpath ./joint_tracker
 
-pipe_name = 'pipe1';
+pipe_name = 'pipe5';
 
 if ~exist('frames', 'var')
     load([pipe_name '.mat']);
 end
 
-start = 1;
-n = (size(frames, 4)-1);
+start = 150;
+% n = (size(frames, 4)-1);
+n = 300;
 visualize = false;
 evaluation = true;
 
@@ -43,7 +44,7 @@ end
 % tracking variables           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Constants based on pipe video.
-pipe_radius = 5;
+pipe_radius = 4;
 camera_f = 510;  % MAGIC
 
 % Weights on the features for picking best measurement.
@@ -55,7 +56,7 @@ small_delta_radius_guess = .3; % MAGIC.
 
 if ~exist('init_state', 'var')
     % Get the initialization of the first circle.
-    I = frames(:, :, :, start);
+    I = frames(:, :, :, start+1);
     imshow(I);
     [x,y] = ginput(2);
 
@@ -106,10 +107,10 @@ for i = start:start+n-1
                     frames(50:end-50, 50:end-50, :, i+1), ...
                     M, warp, templateData, odom_rect);
     
-%     % If we got some bad data, get rid of it.
-%     if abs(TrackedObject.lkt_pos(index, 3)-TrackedObject.template_pos(index, 3)) > 1.5*distance_threshold
-%         M = TrackedObject.M(:, :, index-1);  % Use the old M.
-%     end
+    % If we got some bad data, get rid of it.
+    if abs((1 - M(1,1))*510*(1/250)) > 1.5 * distance_threshold
+        M = TrackedObject.M(:, :, index-1);  % Use the old M.
+    end
             
     %%%%%%%%%%%%%%%%%%%%%
     % Joint Tracking
@@ -130,15 +131,15 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha M(2, 3)/alpha (1 - alpha)*510*(1/250)] + ...
-               TrackedObject.template_pos(index, :);
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
+               TrackedObject.template_pos(index, :)';
     
     % Get the scale ratio to estimate position from joint tracking.
     ratio = pipe_radius/circle.state(3);
     
     % Convert measurements from pixels to deci-feet.
-    delta = .1* [(circle.state(1) - size(frames, 2)/2) * ratio ...
-                 (circle.state(2) - size(frames, 1)/2) * ratio ...
+    delta = .1* [(circle.state(1) - size(frames, 2)/2) * ratio; ...
+                 (circle.state(2) - size(frames, 1)/2) * ratio; ...
                   ratio * camera_f];
     
     % Initialize the position.
@@ -181,22 +182,27 @@ for i = start:start+n-1
     % Updating the template.
     %%%%%%%%%%%%%%%%%%%%%
     % If we have moved past a threshold re-initialize the template.
-    if abs(TrackedObject.lkt_pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
+    if abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
         templateData = [];
         M = eye(3);
-        TrackedObject.template_pos(index+1, :) = lkt_pos;
+        TrackedObject.template_pos(index+1, :) = pos;
     end
     
     
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the circles.
     %%%%%%%%%%%%%%%%%%%%%
+    if ~update_pos
+        phi = 0.7;
+%         circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
+        circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
+    end
+    
     % If we are tracking too big a circle reinitialize it.
     if circle.state(3) > 240
         % Reinitialize the circle.
         circle.state(3) = small_radius_guess;
         circle.state(6) = small_delta_radius_guess;
-        circle.sigma(1:3) = [10 10 10];
         circle.real = false;
 
         % Set the flag to update pos, once the circle is real.
@@ -205,7 +211,8 @@ for i = start:start+n-1
     
     % Update the initial position, once the circle is real.
     if circle.real && update_pos
-        initial_pos = pos+delta;
+%         initial_pos = pos+delta;
+        initial_pos = pos;
     end
 end
 
@@ -216,7 +223,7 @@ end
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = start:start+n-1
+    for i = 30:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -232,19 +239,21 @@ if visualize
         template = uint8(template);
 
         % Show the template.
-        subplot(2, 1, 1);
+        subplot(2, 2, 1);
         imshow(template);
         title(i);
         
         % Draw the circles.
+        subplot(2, 2, 2);
+        imshow(frames(:, :, :, i+1));
         circle = TrackedObject.circles{i-start+1};
         if circle.real
-            viscircles(circle.state(1:2)'-50, circle.state(3), 'EdgeColor', 'b');
+            viscircles(circle.state(1:2)', circle.state(3), 'EdgeColor', 'b');
         end
 
 
         % Show deviations from the original template.
-        subplot(2, 1, 2);
+        subplot(2, 2, 3);
         imagesc(abs(T - template));
 
         pause(0.3);

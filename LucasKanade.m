@@ -20,7 +20,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
         y = Y(:);
         
         % Create a mask for the odometry rectangle.
-        mask = zeros(size(I2));
+        mask = zeros(size(I));
         mask(odom_rect(3):odom_rect(4), odom_rect(1):odom_rect(2)) = 1;
     
         % Save off the template information into the template data struct.
@@ -61,7 +61,8 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
         warpedMask = logical(warpedMask(:));
         
         % Remove the odometry rectangle from the warp.
-        warpedI2(warpedMask) = NaN;
+        warpedI2(warpedMask) = NaN;  % The warped mask for the warped image odometry box.
+        warpedI2(logical(templateData.mask(:))) = NaN;  % The unwarped mask for the template odometry box.
         
         % Find NaN in the warped I2
         index = find(~isnan(warpedI2));

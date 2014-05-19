@@ -275,7 +275,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
 
             % We found a bad circle.
             % HACK: smaller circles have lower threshold.
-            if (metric < -23 & state_prior(3) < 90) | (metric < -30 & state_prior(3) > 90) 
+            if (metric < -20 & state_prior(3) < 90) | (metric < -30 & state_prior(3) > 90) 
                 measurement = [];
                 features = [];
                 return;
