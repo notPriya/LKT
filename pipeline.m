@@ -12,9 +12,9 @@ if ~exist('frames', 'var')
     load([pipe_name '.mat']);
 end
 
-start = 150;
-% n = (size(frames, 4)-1);
-n = 300;
+start = 1;
+n = (size(frames, 4)-1);
+% n = 800;
 visualize = false;
 evaluation = true;
 
@@ -124,7 +124,12 @@ for i = start:start+n-1
         circle.state(4:5) = velocity;
     end
     [circle, ~] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
-    toc;
+    
+    t = toc;
+    fprintf('Elapsed time is %f seconds.\n', t);
+    if t > 3
+        disp(length(error));
+    end
     
     %%%%%%%%%%%%%%%%%%%%%
     % Distance Estimation
@@ -154,12 +159,19 @@ for i = start:start+n-1
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
     if circle.real && ~update_pos
-        gamma = 0.8;
+        gamma = 0.6;
     end
     
     % Combine the LKT position estimate and the joint tracking position
     % estimate.
     pos = gamma * lkt_pos + (1-gamma) * jt_pos;
+    
+    % Dont save the joint tracking position if its wrong. We make it a NaN
+    % so the vector plots as usual but nothing shows up. Do this last to
+    % keep everything from going NaN. 
+    if ~circle.real || update_pos
+        jt_pos = NaN;
+    end
     
     %%%%%%%%%%%%%%%%%%%%%
     % Save Results.
@@ -181,10 +193,18 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the template.
     %%%%%%%%%%%%%%%%%%%%%
+    % If the circle is real, incorporate that info into M.
+    if circle.real && ~update_pos
+        alpha = 1 - 250 * 1/510 * (pos(3) - TrackedObject.template_pos(index, 3));
+        M(1,1) = alpha;
+        M(2,2) = alpha;
+    end
     % If we have moved past a threshold re-initialize the template.
     if abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
+        % Clear the template and M.
         templateData = [];
         M = eye(3);
+        % Update the template's position.
         TrackedObject.template_pos(index+1, :) = pos;
     end
     
@@ -192,6 +212,8 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the circles.
     %%%%%%%%%%%%%%%%%%%%%
+    % If the circle is real, incorporate the LKT information into the
+    % state.
     if ~update_pos
         phi = 0.7;
 %         circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
@@ -211,8 +233,8 @@ for i = start:start+n-1
     
     % Update the initial position, once the circle is real.
     if circle.real && update_pos
-%         initial_pos = pos+delta;
-        initial_pos = pos;
+        initial_pos = pos + delta;
+        update_pos = false;
     end
 end
 
@@ -223,7 +245,7 @@ end
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = 30:start+n-1
+    for i = 1050:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -269,7 +291,7 @@ plot(start:start+n-1, TrackedObject.pos(:, 3), 'b');
 hold on;
 plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
 plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
-plot((ground_truth - ground_truth(start))/10, 'k')
+plot((ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %

@@ -36,7 +36,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
     
     threshold = .00001;
     error = [];
-    max_iteration = 500;
+    max_iteration = 50;
     Ms = zeros(3, 3, max_iteration);
     iteration = 1;
     % Fix errors in M by computing small changes to the parameters.
