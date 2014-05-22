@@ -6,7 +6,7 @@ clc;
 addpath ./toolbox
 addpath ./joint_tracker
 
-pipe_name = 'pipe6';
+pipe_name = 'pipe5';
 
 % Load the frames to process.
 if ~exist('frames', 'var')
@@ -109,6 +109,8 @@ update_pos = false;
 TrackedObject.lkt_pos = zeros(n, 3);
 TrackedObject.jt_pos = zeros(n, 3);
 TrackedObject.pos = zeros(n, 3);
+% Time Results.
+TrackedObject.time = zeros(n, 1);
 % LKT Results
 TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
@@ -116,6 +118,8 @@ TrackedObject.template = cell(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
 % Joint Tracking Results.
 TrackedObject.circles = cell(n, 1);
+% Weighting Results.
+TrackedObject.gamma = zeros(n, 3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -149,12 +153,15 @@ for i = start:start+n-1
         velocity = (centroid - circle.state(1:2))/100;
         circle.state(4:5) = velocity;
     end
-    [circle, ~] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
+    [circle, features] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
     
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
     if t > 3
         disp(length(error));
+    end
+    if mod(i, 200) == 0
+        disp(i);
     end
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -185,7 +192,15 @@ for i = start:start+n-1
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
     if circle.real && ~update_pos
-        gamma = 0.6;
+        % Calculate the LKT Score
+        lkt_metric = min(error);
+        lkt_score = max(min(1 - lkt_metric/(1*10^6), 1), 0);
+        % Calculate the joint score.
+        joint_metric = features(1, :) * weights;
+        joint_score = max(min(-joint_metric/10, 1), 0);
+        
+        % Simple average.
+        gamma =  .5*lkt_score + .5*joint_score;
     end
     
     % Combine the LKT position estimate and the joint tracking position
@@ -207,6 +222,8 @@ for i = start:start+n-1
     TrackedObject.lkt_pos(index, :) = lkt_pos;
     TrackedObject.jt_pos(index, :) = jt_pos;
     TrackedObject.pos(index, :) = pos;
+    % Time Results.
+    TrackedObject.time(index) = t;
     % LKT Results
     TrackedObject.M(:, :, index) = M;
     TrackedObject.error{index} = error;
@@ -214,6 +231,8 @@ for i = start:start+n-1
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
     % Joint tracking results
     TrackedObject.circles{index} = circle;
+    % Weighting Results.
+    TrackedObject.gamma(index, :) = [joint_metric lkt_metric gamma];
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -242,7 +261,7 @@ for i = start:start+n-1
     % state.
     phi = 1;
     if circle.real
-        phi = 0.7;
+        phi = 0.8;
     end
 %     circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
     circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
@@ -282,7 +301,7 @@ end
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = 160:start+n-1
+    for i = start:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -345,8 +364,8 @@ message_format = ['Video:\t\t\t%s\n' ...
                   'Start Frame:\t\t%d\n' ...
                   'End Frame:\t\t%d\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Evaluation of commit 20f124a to determine where ' ...
-                  'improvements can be made. Basically save off the baseline.'
+                  'Gamma (weighting between lkt and joint tracker positions)' ...
+                  'now depends on the metrics of the lkt and joint tracker.'
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1);
@@ -358,4 +377,8 @@ emailResults(message, figure_filename);
 %% Clean up environment.       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio date_string figure_filename message_format message;
+clear I M T alpha distance_threshold error i template templateData index ...
+      ground_truth gamma circle camera_f small_delta_radius_guess ...
+      small_radius_guess weights update_pos ration pipe_radius ...
+      initial_pos jt_pos lkt_pos delta pos ratio date_string figure_filename ...
+      message_format message joint_metric lkt_metric joint_score lkt_score;
