@@ -261,7 +261,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
 
             % Determine the score from the learned weights.
             weights(1) = weights(1)*3; % Boost appearance score.
-            weights(5) = weights(5)/3; % Demote center score.
+%             weights(5) = weights(5)/3; % Demote center score.
             metric = features * weights;
             
             % Sort by the metric again.

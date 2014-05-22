@@ -36,7 +36,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
     
     threshold = .00001;
     error = [];
-    max_iteration = 50;
+    max_iteration = 30;
     Ms = zeros(3, 3, max_iteration);
     iteration = 1;
     % Fix errors in M by computing small changes to the parameters.
@@ -50,9 +50,6 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
           iteration < max_iteration)
         % Warp the image into the frame of the template.
         warpedI2 = warp.doWarp(I2, M);
-% meow = reshape(templateData.template, size(I2, 1), size(I2, 2));
-% imshow(uint8(abs(meow - warpedI2)));        
-% drawnow;        
         warpedI2 = warpedI2(:);
         
         % Warp the odometry mask.

@@ -8,13 +8,19 @@ addpath ./joint_tracker
 
 pipe_name = 'pipe5';
 
+% Load the frames to process.
 if ~exist('frames', 'var')
     load([pipe_name '.mat']);
 end
 
-start = 1;
-n = (size(frames, 4)-1);
-% n = 800;
+% Get password from the user,
+if ~exist('password', 'var')
+    password = input('Enter Password:  ', 's');
+end
+
+start = 50;
+% n = size(frames, 4) - start;
+n = 800;
 visualize = false;
 evaluation = true;
 
@@ -214,11 +220,12 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % If the circle is real, incorporate the LKT information into the
     % state.
-    if ~update_pos
+    phi = 1;
+    if circle.real
         phi = 0.7;
-%         circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
-        circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     end
+%     circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
+    circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     
     % If we are tracking too big a circle reinitialize it.
     if circle.state(3) > 240
@@ -227,6 +234,16 @@ for i = start:start+n-1
         circle.state(6) = small_delta_radius_guess;
         circle.real = false;
 
+        % Get an estimate of the current circle's position to continue
+        % updating the radius.
+        % Get the scale ratio to estimate position from joint tracking.
+        ratio = pipe_radius/circle.state(3);
+        % Convert measurements from pixels to deci-feet.
+        delta = .1* [(circle.state(1) - size(frames, 2)/2) * ratio; ...
+                     (circle.state(2) - size(frames, 1)/2) * ratio; ...
+                      ratio * camera_f];
+        initial_pos = pos + delta;
+        
         % Set the flag to update pos, once the circle is real.
         update_pos = true;
     end
@@ -239,13 +256,13 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
-% save('trackCoordinates_real.mat', 'TrackedObject');
+% save([pipe_name '_results.mat', 'TrackedObject', '-v7.3');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = 1050:start+n-1
+    for i = 160:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -271,6 +288,8 @@ if visualize
         circle = TrackedObject.circles{i-start+1};
         if circle.real
             viscircles(circle.state(1:2)', circle.state(3), 'EdgeColor', 'b');
+        else
+            viscircles(circle.state(1:2)', circle.state(3), 'EdgeColor', 'k');
         end
 
 
@@ -291,10 +310,30 @@ plot(start:start+n-1, TrackedObject.pos(:, 3), 'b');
 hold on;
 plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
 plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
-plot((ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
+plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
+
+% Save to a PNG file with today's date and time.
+date_string = datestr(now,'yy_mm_dd_HH_MM');
+figure_filename = [pipe_name '_results_' date_string '.png'];
+saveas(gcf, figure_filename , 'png');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Visualize the z-axis motion %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+message_format = ['Video:\t\t%s\n'
+                  'Start Frame:\t\t%d\n'
+                  'End Frame:\t\t%d\n\n'
+                  'ExtraInfo:\n'
+                 ];
+
+message = sprintf(message_format, pipe_name, start, start+n-1);
+
+
+emailResults(password, message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio;
+clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio date_string figure_filename;
