@@ -6,7 +6,7 @@ clc;
 addpath ./toolbox
 addpath ./joint_tracker
 
-pipe_name = 'pipe5';
+pipe_name = 'pipe6';
 
 % Load the frames to process.
 if ~exist('frames', 'var')
@@ -14,13 +14,33 @@ if ~exist('frames', 'var')
 end
 
 % Get password from the user,
-if ~exist('password', 'var')
+if ~exist('setupEmail', 'var') || ~setupEmail
+    % Setup the SMTP stuff.
     password = input('Enter Password:  ', 's');
+    setpref('Internet', 'E_mail', 'pdeo@andrew.cmu.edu')
+    setpref('Internet', 'SMTP_Server', 'smtp.andrew.cmu.edu');
+    setpref('Internet', 'SMTP_Username', 'pdeo');
+    setpref('Internet', 'SMTP_Password', password);
+    % Dont save the password!
+    clear password;
+    % Clear screen to get rid of the password.
+    clc;
+    % Pause matlab so user can clear password.
+    input('Please clear password from command history.');
+    
+    % Setup the SSL connection.
+    props = java.lang.System.getProperties;
+    props.setProperty('mail.smtp.auth','true');
+    props.setProperty('mail.smtp.socketFactory.class', ...
+                      'javax.net.ssl.SSLSocketFactory');
+    props.setProperty('mail.smtp.socketFactory.port','465');
+    
+    % Make sure we dont keep doing this.
+    setupEmail = true;
 end
 
-start = 50;
-% n = size(frames, 4) - start;
-n = 800;
+start = 1;
+n = size(frames, 4) - start;
 visualize = false;
 evaluation = true;
 
@@ -321,19 +341,21 @@ saveas(gcf, figure_filename , 'png');
 %% Visualize the z-axis motion %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-message_format = ['Video:\t\t%s\n'
-                  'Start Frame:\t\t%d\n'
-                  'End Frame:\t\t%d\n\n'
-                  'ExtraInfo:\n'
+message_format = ['Video:\t\t\t%s\n' ...
+                  'Start Frame:\t\t%d\n' ...
+                  'End Frame:\t\t%d\n\n' ...
+                  'ExtraInfo:\n\n' ...
+                  'Evaluation of commit 20f124a to determine where ' ...
+                  'improvements can be made. Basically save off the baseline.'
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1);
 
 
-emailResults(password, message, figure_filename);
+emailResults(message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio date_string figure_filename;
+clear I M T alpha distance_threshold error i template templateData index ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess weights update_pos ration pipe_radius clear initial_pos jt_pos lkt_pos delta pos ratio date_string figure_filename message_format message;
