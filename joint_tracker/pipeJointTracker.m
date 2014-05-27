@@ -248,8 +248,10 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
         % HACK: smaller circles have a stricter threshold.
         if state_prior(3) < 80
             [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .1, 'Sensitivity', .98);
-        else
+        elseif state_prior(3) < 100
             [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .1, 'Sensitivity', .99);
+        else
+            [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .05, 'Sensitivity', .99);
         end
 
         measurement = [];
@@ -275,7 +277,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
 
             % We found a bad circle.
             % HACK: smaller circles have lower threshold.
-            if (metric < -20 & state_prior(3) < 90) | (metric < -30 & state_prior(3) > 90) 
+            if (metric < -20 & state_prior(3) < 90) | (metric < -27 & state_prior(3) > 90) 
                 measurement = [];
                 features = [];
                 return;

@@ -6,7 +6,7 @@ clc;
 addpath ./toolbox
 addpath ./joint_tracker
 
-pipe_name = 'pipe5';
+% pipe_name = 'pipe6';
 
 % Load the frames to process.
 if ~exist('frames', 'var')
@@ -74,7 +74,7 @@ pipe_radius = 4;
 camera_f = 510;  % MAGIC
 
 % Weights on the features for picking best measurement.
-weights = [1.73962175432486;0;3;3.34010706169493;6.71403253431558];
+weights = [1.73962175432486;0;3.5;3.34010706169493;6.71403253431558];
 
 % Small circle intialization.
 small_radius_guess = 55;  % MAGIC.
@@ -119,7 +119,7 @@ TrackedObject.template_pos = zeros(n+1, 3);
 % Joint Tracking Results.
 TrackedObject.circles = cell(n, 1);
 % Weighting Results.
-TrackedObject.gamma = zeros(n, 3);
+% TrackedObject.gamma = zeros(n, 3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -157,9 +157,6 @@ for i = start:start+n-1
     
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
-    if t > 3
-        disp(length(error));
-    end
     if mod(i, 200) == 0
         disp(i);
     end
@@ -191,16 +188,17 @@ for i = start:start+n-1
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
-    if circle.real && ~update_pos
+    if circle.real && ~update_pos && size(features, 1) >= 1
         % Calculate the LKT Score
         lkt_metric = min(error);
-        lkt_score = max(min(1 - lkt_metric/(1*10^6), 1), 0);
+        lkt_score = max(min(1 - lkt_metric/(2*10^6), 1), 0);
         % Calculate the joint score.
         joint_metric = features(1, :) * weights;
         joint_score = max(min(-joint_metric/10, 1), 0);
         
         % Simple average.
         gamma =  .5*lkt_score + .5*joint_score;
+%         gamma = .6;
     end
     
     % Combine the LKT position estimate and the joint tracking position
@@ -232,7 +230,7 @@ for i = start:start+n-1
     % Joint tracking results
     TrackedObject.circles{index} = circle;
     % Weighting Results.
-    TrackedObject.gamma(index, :) = [joint_metric lkt_metric gamma];
+%     TrackedObject.gamma(index, :) = [joint_metric lkt_metric gamma];
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -261,9 +259,8 @@ for i = start:start+n-1
     % state.
     phi = 1;
     if circle.real
-        phi = 0.8;
+        phi = 0.9;
     end
-%     circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
     circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     
     % If we are tracking too big a circle reinitialize it.
@@ -301,7 +298,7 @@ end
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = start:start+n-1
+    for i = 250:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -350,8 +347,9 @@ hold on;
 plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
 plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
 plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
+axis([0 n+5 -5 max(ground_truth-ground_truth(start))/10+5]);
 
-% Save to a PNG file with today's date and time.
+%% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
 saveas(gcf, figure_filename , 'png');
@@ -362,13 +360,18 @@ saveas(gcf, figure_filename , 'png');
 
 message_format = ['Video:\t\t\t%s\n' ...
                   'Start Frame:\t\t%d\n' ...
-                  'End Frame:\t\t%d\n\n' ...
+                  'End Frame:\t\t%d\n' ...
+                  'Average Time:\t\t%f\n' ...
+                  'Total Time:\t\t%f\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Gamma (weighting between lkt and joint tracker positions)' ...
-                  'now depends on the metrics of the lkt and joint tracker.'
+                  'Removed the gamma thingy and just running with a hopefully ' ...
+                  'better LKT tracker. Changed a bunch of parameters there.\n\n' ...
+                  'More sensitive imfindcircles for initialization, and ' ...
+                  'stricter metric thresholds, and different weights for ' ...
+                  'tracking and phi.'
                  ];
 
-message = sprintf(message_format, pipe_name, start, start+n-1);
+message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
 
 
 emailResults(message, figure_filename);
