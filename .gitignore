@@ -229,8 +229,7 @@ pip-log.txt
 ## Junk Folders
 #############
 
-old code/
 results/
-old data/
 *_result.avi
 *.jpg
+pipe*_results_*.png
