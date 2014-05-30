@@ -40,8 +40,7 @@ if ~exist('setupEmail', 'var') || ~setupEmail
 end
 
 start = 1;
-% n = size(frames, 4) - start;
-n = 600;
+n = size(frames, 4) - start;
 visualize = false;
 evaluation = true;
 
