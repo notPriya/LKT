@@ -40,7 +40,8 @@ if ~exist('setupEmail', 'var') || ~setupEmail
 end
 
 start = 1;
-n = size(frames, 4) - start;
+% n = size(frames, 4) - start;
+n = 600;
 visualize = false;
 evaluation = true;
 
@@ -74,7 +75,7 @@ pipe_radius = 4;
 camera_f = 510;  % MAGIC
 
 % Weights on the features for picking best measurement.
-weights = [1.73962175432486;0;3;3.34010706169493;6.71403253431558];
+weights = [1.73962175432486;0;4;3.34010706169493;6.71403253431558];
 
 % Small circle intialization.
 small_radius_guess = 55;  % MAGIC.
@@ -286,7 +287,7 @@ end
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
-    for i = 160:start+n-1
+    for i = start:start+n-1
         % Extract the image.
         I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
 
@@ -351,8 +352,7 @@ message_format = ['Video:\t\t\t%s\n' ...
                   'Average Time:\t\t%f\n\n' ...
                   'Total Time:\t\t%f\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Reverting pipeline file back to commit 01e2f1a5 because it ' ...
-                  'worked better. The LKT still has the improvements.' ...
+                  'Change weights from 3 to 4 for black blob scores.' ...
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
