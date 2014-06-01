@@ -252,7 +252,9 @@ for i = start:start+n-1
     circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     
     % If we are tracking too big a circle reinitialize it.
-    if circle.state(3) > 240
+    % Or if the circle goes off the screen reinitialize it.
+    if circle.state(3) > 240 || ...
+       ~(circle.state(1) > 0 && circle.state(1) < size(frames, 2) && circle.state(2) > 0 && circle.state(2) < size(frames, 1))
         % Reinitialize the circle.
         circle.state(3) = small_radius_guess;
         circle.state(6) = small_delta_radius_guess;
@@ -280,7 +282,7 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
-% save([pipe_name '_results.mat', 'TrackedObject', '-v7.3');
+save([pipe_name '_comb_results.mat', 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize                   %
@@ -336,7 +338,7 @@ plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
 plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
 plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
 
-% Save to a PNG file with today's date and time.
+%% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
 saveas(gcf, figure_filename , 'png');
