@@ -118,6 +118,9 @@ TrackedObject.template = cell(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
 % Joint Tracking Results.
 TrackedObject.circles = cell(n, 1);
+% Weighted Average Results.
+TrackedObject.errors = zeros(n, 2);
+TrackedObject.score = zeros(n, 3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -151,7 +154,7 @@ for i = start:start+n-1
         velocity = (centroid - circle.state(1:2))/100;
         circle.state(4:5) = velocity;
     end
-    [circle, ~] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
+    [circle, jt_error] = pipeJointTracker(frames(:, :, :, i+1), weights, circle, evaluation);
     
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
@@ -186,8 +189,15 @@ for i = start:start+n-1
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
+    lkt_score = NaN;
+    jt_score = NaN;
     if circle.real && ~update_pos
-        gamma = 0.6;
+        lkt_score = 1-min(min(error), 2*10^6)/(2*10^6);  % 0 if error is high.
+        jt_score = 1-min(jt_error, 10)/10;  % 0 if error is high.
+        gamma = lkt_score/(lkt_score + jt_score);
+        if isnan(gamma)
+          gamma = 1;
+        end
     end
     
     % Combine the LKT position estimate and the joint tracking position
@@ -209,8 +219,8 @@ for i = start:start+n-1
     TrackedObject.lkt_pos(index, :) = lkt_pos;
     TrackedObject.jt_pos(index, :) = jt_pos;
     TrackedObject.pos(index, :) = pos;
-		% Time results.
-		TrackedObject.time(index) = t;
+    % Time results.
+    TrackedObject.time(index) = t;
     % LKT Results
     TrackedObject.M(:, :, index) = M;
     TrackedObject.error{index} = error;
@@ -218,6 +228,9 @@ for i = start:start+n-1
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
     % Joint tracking results
     TrackedObject.circles{index} = circle;
+    % Weighted average results.
+    TrackedObject.errors(index, :) = [min(error) jt_error];
+    TrackedObject.score(index, :) = [lkt_score jt_score gamma];
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -282,7 +295,7 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
-save([pipe_name '_comb_results.mat', 'pos');
+save([pipe_name '_comb_results.mat'], 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize                   %
@@ -353,7 +366,8 @@ message_format = ['Video:\t\t\t%s\n' ...
                   'Average Time:\t\t%f\n\n' ...
                   'Total Time:\t\t%f\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Change weights from 3 to 4 for black blob scores.' ...
+                  'Doing a dynamic weighting update for gamma. ' ...
+                  'This time using the KF weighting function.' ...
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));

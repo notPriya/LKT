@@ -1,6 +1,6 @@
 % Tracks pipe joints using a Kalman Filter and a Hough Transform to take
 % measurements of the actual circles in the image.
-function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, evaluation)
+function [new_circle, weighted_norm, features] = pipeJointTracker(I, weights, previous_circle, evaluation)
 
     % Model parameters.
     A = [eye(3) eye(3); zeros(3) eye(3)];
@@ -59,6 +59,7 @@ function [new_circle, features] = pipeJointTracker(I, weights, previous_circle, 
     % Outlier Rejection                 %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+    weighted_norm = Inf;
     if ~isempty(measurement)
         S = H * covariance_prior * H' + R;
         error = measurement - H * state_prior;
