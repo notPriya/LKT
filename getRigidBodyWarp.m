@@ -4,6 +4,7 @@ function warp = getRigidBodyWarp()
     warp.gradient = @getSpatialTensor;
     warp.compose = @rigidBodyComposition;
     warp.newWarp = @createRigidBodyTransform;
+    warp.getXY = @getRigidBodyCoordinates;
 end
 
 function I2 = rigidBodyWarp(I, T)
@@ -22,4 +23,9 @@ end
 
 function A = getSpatialTensor(x, y, Ix, Iy)
     A = [Ix Iy x.*Ix+y.*Iy x.*Iy-y.*Ix];
+end
+
+function [X, Y] = getRigidBodyCoordinates(sizeI)
+    [X, Y] = meshgrid(ceil(-sizeI(2)/2):floor(sizeI(2)/2), ...
+                      ceil(-sizeI(1)/2):floor(sizeI(1)/2));
 end

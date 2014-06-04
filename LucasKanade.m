@@ -14,8 +14,7 @@ function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, 
         Iy = Iy(:);
 
         % Compute X and Y
-        [X, Y] = meshgrid(ceil(-size(I, 2)/2):floor(size(I, 2)/2), ...
-                          ceil(-size(I, 1)/2):floor(size(I, 1)/2));
+        [X, Y] = warp.getXY(size(I));
         x = X(:);
         y = Y(:);
         
