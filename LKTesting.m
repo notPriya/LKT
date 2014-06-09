@@ -23,64 +23,61 @@ disp('Starting Affine Warp Tests');
 
 % Set up the identity warp.
 A = eye(3);
-tform = affine2d(A);
 
 % Transform the image.
-I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
+I2 = warp.doWarp(I, A);
 
 % Run Lucas Kanade.
-M = LucasKanade(I2, I, A', warp, [], odom_rect);
+M = LucasKanade(I2, I, A, warp, [], odom_rect);
 
 % Show results of test.
-if ~all(all(M == A'))
+if ~all(all(M == A))
    disp('Identity Test Failed'); 
 end
 
 % Test the non-trivial cases.
 
 % Setup some non-trivial warp.
-B = A + [.01*randn(3,2) zeros(3, 1)];
-tform2 = affine2d(B);
+B = A * warp.newWarp(.01*randn(6,1));
 
 % Transform the image.
-I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
+I2 = warp.doWarp(I, B);
 
-M = LucasKanade(I2, I, B', warp, [], odom_rect);
+M = LucasKanade(I2, I, B, warp, [], odom_rect);
 
-if sum(sum(abs(M - B'))) > threshold
+if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Easy Test Failed');  
 end
 
 M = LucasKanade(I2, I, eye(3), warp, [], odom_rect);
 
-if sum(sum(abs(M - B'))) > threshold
+if sum(sum(abs(M - B))) > threshold
    disp('Non-trivial Hard Test Failed');     
 end
 
 % Test a more difficult case.
 
 % Setup an even harder warp.
-C = A + [.1*randn(3,2) zeros(3, 1)];
-tform3 = affine2d(C);
+C = A * warp.newWarp(.1*randn(6,1));
 
 % Transform the image.
-I2 = imwarp(I, tform3, 'OutputView', imref2d(size(I)));
+I2 = warp.doWarp(I, C);
 
-M = LucasKanade(I2, I, C', warp, [], odom_rect);
+M = LucasKanade(I2, I, C, warp, [], odom_rect);
 
-if sum(sum(abs(M - C'))) > threshold
+if sum(sum(abs(M - C))) > threshold
    disp('Difficult Easy Test Failed');     
 end
 
 M = LucasKanade(I2, I, eye(3), warp, [], odom_rect);
 
-if sum(sum(abs(M - C'))) > threshold
+if sum(sum(abs(M - C))) > threshold
    disp('Difficult Hard Test Failed');     
 end
 
 M = LucasKanade(I2, I, eye(3) + [.1*randn(2,3); zeros(1, 3)], warp, [], odom_rect);
 
-if sum(sum(abs(M - C'))) > threshold
+if sum(sum(abs(M - C))) > threshold
    disp('Difficult Harder Test Failed');     
 end
 
@@ -94,10 +91,9 @@ disp('Starting Rigid Body Warp Tests');
 
 % Set up the identity warp.
 A = eye(3);
-tform = affine2d(A);
 
 % Transform the image.
-I2 = imwarp(I, tform, 'OutputView', imref2d(size(I)));
+I2 = warp.doWarp(I, A);
 
 % Run Lucas Kanade.
 M = LucasKanade(I2, I, A, warp, [], odom_rect);
@@ -110,14 +106,11 @@ end
 % Test the non-trivial cases.
 
 % Setup some non-trivial warp.
-p = .1*randn(4, 1);
+p = [10*randn(2, 1); .1*randn(1); .1*randn(1)];
 B = warp.newWarp(p);
-tform2 = affine2d(B');
 
 % Transform the image.
-I2 = imwarp(I, tform2, 'OutputView', imref2d(size(I)));
-imshow(I2);
-drawnow;
+I2 = warp.doWarp(I, B);
 
 [M, ~, error] = LucasKanade(I2, I, B, warp, [], odom_rect);
 

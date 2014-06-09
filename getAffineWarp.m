@@ -8,11 +8,13 @@ function warp = getAffineWarp()
 end
 
 function I2 = AffineWarp(I, A)
-    I2 = imwarp(I, affine2d(A'), 'OutputView', imref2d(size(I)), 'FillValues', NaN);
+    % Put (0, 0) in the center of the image.
+    RI = imref2d(size(I), [-size(I, 2)/2 size(I, 2)/2], [-size(I, 1)/2 size(I, 1)/2]);    
+    I2 = imwarp(I, RI, affine2d(A'), 'OutputView', RI, 'FillValues', NaN);
 end
 
 function Mfinal = AffineComposition(M, M_new)
-    Mfinal = M_new * M;
+    Mfinal = M * M_new;
 end
 
 function M = createAffineWarp(p)
@@ -24,5 +26,6 @@ function A = getSpatialTensor(x, y, Ix, Iy)
 end
 
 function [X, Y] = getAffineCoordinates(sizeI)
-    [X, Y] = meshgrid(1:size(I, 2), 1:size(I, 1));
+    [X, Y] = meshgrid(ceil(-sizeI(2)/2):floor(sizeI(2)/2), ...
+                      ceil(-sizeI(1)/2):floor(sizeI(1)/2));
 end
