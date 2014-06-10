@@ -192,12 +192,7 @@ for i = start:start+n-1
     lkt_score = NaN;
     jt_score = NaN;
     if circle.real && ~update_pos
-        lkt_score = 1-min(min(error), 2*10^6)/(2*10^6);  % 0 if error is high.
-        jt_score = 1-min(jt_error, 10)/10;  % 0 if error is high.
-        gamma = lkt_score/(lkt_score + jt_score);
-        if isnan(gamma)
-          gamma = 1;
-        end
+        gamma = 0.6;
     end
     
     % Combine the LKT position estimate and the joint tracking position
@@ -295,6 +290,7 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
+pos = TrackedObject.pos;
 save([pipe_name '_comb_results.mat'], 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -350,6 +346,7 @@ hold on;
 plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
 plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
 plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
+axis([0 start+n-1 0 max(ground_truth-ground_truth(start))/10]);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
@@ -366,8 +363,7 @@ message_format = ['Video:\t\t\t%s\n' ...
                   'Average Time:\t\t%f\n\n' ...
                   'Total Time:\t\t%f\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Doing a dynamic weighting update for gamma. ' ...
-                  'This time using the KF weighting function.' ...
+                  'Testing improvements from changing the findDarkRegions function.' ...
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
