@@ -299,7 +299,7 @@ save([pipe_name '_comb_results.mat'], 'pos');
 if visualize
     for i = start:start+n-1
         % Extract the image.
-        I = preprocessImage(frames(50:end-50,50:end-50,:,i+1));
+        I = preprocessImage(frames(50:end-50,50:end-50,:,i+1), true, false);
 
         % Determine the optimal affine transform.
         M = TrackedObject.M(:, :, i-start+1);
