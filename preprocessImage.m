@@ -1,16 +1,22 @@
-function im = preprocessImage(I)
+function im = preprocessImage(I, doBlur, doNorm)
     % Convert to grayscale.
     gray = rgb2gray(I);
     
     % Blur.
-    G = fspecial('gaussian', 10, 5);
-    im = imfilter(gray, G, 'symmetric');
+    if doBlur
+        G = fspecial('gaussian', 10, 5);
+        im = imfilter(gray, G, 'symmetric');
+    else
+        im = gray;
+    end
     
-%     % Normalize pixel values.
-%     min_val = min(min(im));
-%     max_val = max(max(im));
-%     scale = 255/(max_val - min_val);
-%     im = (im - min_val)*scale;
+    if doNorm
+        % Normalize pixel values.
+        min_val = min(min(im));
+        max_val = max(max(im));
+        scale = 255/(max_val - min_val);
+        im = (im - min_val)*scale;
+    end
     
     % Convert to doubles.
     im = double(im);

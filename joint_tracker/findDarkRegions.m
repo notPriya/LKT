@@ -6,7 +6,7 @@ function ind = findDarkRegions(I)
     k2 = .25;  % standard devations above min value.
 
     % Convert image to grayscale.
-    gray = rgb2gray(I(2:end-2, 2:end-2, :));
+    gray = preprocessImage(I(2:end-2, 2:end-2, :), true, true);
 
     % Compute some statistics on the image.
     thresh = mean(gray(:));

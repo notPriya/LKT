@@ -1,10 +1,10 @@
 function [M, templateData, error] = LucasKanade(It, It1, M, warp, templateData, odom_rect)
     % Convert image to usable format.
-    I2 = preprocessImage(It1);
+    I2 = preprocessImage(It1, true, false);
     
     
     if isempty(templateData)
-        I = preprocessImage(It);
+        I = preprocessImage(It, true, false);
         
         % Compute gradient
         [Ix, Iy] = gradient(I);
