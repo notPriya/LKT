@@ -45,7 +45,6 @@ end
 start = 1;
 n = size(frames, 4) - start;
 visualize = false;
-evaluation = true;
 
 % Scale factor for the crawler.
 scale_factor =  -6;
@@ -72,33 +71,9 @@ if ~exist('odom_rect', 'var')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Initialize the Joint         %
-% tracking variables           %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Constants based on pipe video.
-camera_f = 510;  % MAGIC
-% Scale factor to go from pixels to real world units.
-pixel_scale_factor = 6;  % MAGIC
-
-% Weights on the features for picking best measurement.
-weights = [0; 3; 1];
-
-% Initialize the first line to track.
-line_data.state = zeros(6, 1);
-line_data.sigma = eye(6);
-line_data.real = false;
-
-% Initialize the position of the line.
-initial_pos.xy = [];
-initial_pos.pos = [];
-initial_pos.needs_update = true;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a structure for saving the results.
-TrackedObject.lkt_pos = zeros(n, 3);
-TrackedObject.jt_pos = zeros(n, 3);
 TrackedObject.pos = zeros(n, 3);
 % Time results.
 TrackedObject.time = zeros(n, 1);
@@ -107,9 +82,6 @@ TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
 TrackedObject.template = cell(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
-% Joint Tracking Results.
-TrackedObject.lines = cell(n, 1);
-TrackedObject.initial_pos = cell(n, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -131,13 +103,6 @@ for i = start:start+n-1
     if abs((1 - M(1,1))*510*(1/250)) > 1.5 * distance_threshold
         M = TrackedObject.M(:, :, index-1);  % Use the old M.
     end
-            
-    %%%%%%%%%%%%%%%%%%%%%
-    % Line Tracking
-    %%%%%%%%%%%%%%%%%%%%%
-    % Get the preprocessed image.
-    I = preprocessImage(frames(:,:,:,i), true, false);
-    line_data = edgeTracker(I, weights, line_data, evaluation);
     
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
@@ -150,37 +115,14 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
-               TrackedObject.template_pos(index, :)';
-    
-    % Update the initial position of the line if we are tracking a new
-    % line.
-    if line_data.real && initial_pos.needs_update
-        initial_pos.xy = line_data.state(1:2);
-        initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), 1:2);
-        initial_pos.needs_update = false;
-    end
-    
-    % Determine the change in position. Orientation is just the orientation
-    % of the line.
-    delta_pos = initial_pos.xy - line_data.state(1:2);
-    jt_pos = [initial_pos.pos'+delta_pos; lkt_pos(3)];
-    
-    % Use the joint tracking if the circle is real and the position
-    % doesnt need to be updated.
-    gamma = 0.5; % Mixing factor.
-    
-    % Combine the LKT position estimate and the joint tracking position
-    % estimate.
-    pos = gamma * lkt_pos + (1-gamma) * jt_pos;
-        
+    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
+           TrackedObject.template_pos(index, :)';
+            
     %%%%%%%%%%%%%%%%%%%%%
     % Save Results.
     %%%%%%%%%%%%%%%%%%%%%
     % Add everything to the result
     % Distance results
-    TrackedObject.lkt_pos(index, :) = lkt_pos;
-    TrackedObject.jt_pos(index, :) = jt_pos;
     TrackedObject.pos(index, :) = pos;
     % Time results.
     TrackedObject.time(index) = t;
@@ -188,55 +130,20 @@ for i = start:start+n-1
     TrackedObject.M(:, :, index) = M;
     TrackedObject.error{index} = error;
     TrackedObject.template{index} = templateData;
-    TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
-    % Line tracking results
-    TrackedObject.lines{index} = line_data;
-    TrackedObject.initial_pos{index} = initial_pos;
-    
-    
-    %%%%%%%%%%%%%%%%%%%%%
-    % Updating the template.
-    %%%%%%%%%%%%%%%%%%%%%
-    % Update the information from the position, if the line is real.
-    if line_data.real
-        alpha = 1 - 250 * 1/510 * (pos(3) - TrackedObject.template_pos(index, 3));
-        M(1,1) = alpha;
-        M(2,2) = alpha;
-    %     psi = 0.5;
-    %     M(1:2, 3) = psi * M(1:2, 3) + (1-psi) * pos(1:2);
-    end
-        
+    TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);    
+            
     % If we have moved past a threshold re-initialize the template.
-    if abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
+    if any(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :) > distance_threshold)
         % Clear the template and M.
         templateData = [];
         M = eye(3);
         % Update the template's position.
         TrackedObject.template_pos(index+1, :) = pos;
     end
-    
-    
-    %%%%%%%%%%%%%%%%%%%%%
-    % Updating the lines.
-    %%%%%%%%%%%%%%%%%%%%%
-    % If the lines are real, incorporate the LKT information into the
-    % state.
-    phi = 1;
-    if line_data.real
-        phi = 0.9;
-    end
-%     line_data.state(1:2) = phi*line_data.state(1:2) + ...
-%         (1-phi)*(camera_f*1/pixel_scale_factor*(pos(1:2) - initial_pos.pos')+initial_pos.xy);
-        
-    % If we have lost the line, make sure we update the initial pos the
-    % next time we find a line.
-    if ~line_data.real
-        initial_pos.needs_update = true;
-    end
 end
 
 %% Save off the tracked information
-save([pipe_name '_comb_results.mat'], 'pos');
+save([pipe_name '_lkt_results.mat'], 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize                   %
@@ -258,19 +165,12 @@ if visualize
         template = uint8(template);
 
         % Show the template.
-        subplot(2, 2, 1);
+        subplot(2, 1, 1);
         imshow(template);
         title(i);
         
-        % Draw the lines.
-        subplot(2, 2, 2);
-        imshow(uint8(I));
-        hold on;
-        line = TrackedObject.lines{i-start+1};
-        vislines(line);
-
         % Show deviations from the original template.
-        subplot(2, 2, 3);
+        subplot(2, 1, 2);
         imagesc(abs(T - template));
 
         pause(0.3);
@@ -283,8 +183,6 @@ end
 figure;
 hold on;
 plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos, '--', 'LineWidth', 2);
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos, '-.');
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos, '*');
 
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);

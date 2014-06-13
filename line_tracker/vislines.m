@@ -1,8 +1,8 @@
 function vislines(line)
     % Compute the endpoints of the line.
     theta = line.state(3);
-    point1 = line.state(1:2) + 150*[sind(theta); cosd(theta)];
-    point2 = line.state(1:2) - 150*[sind(theta); cosd(theta)];
+    point1 = line.state(1:2) + 150*[-sind(theta); cosd(theta)];
+    point2 = line.state(1:2) - 150*[-sind(theta); cosd(theta)];
 
     % Plot the line.
     xy = [point1'; point2'];

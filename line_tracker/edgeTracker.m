@@ -116,22 +116,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
         end
         
         % Plot the tracked state.
-        % Compute the edges.
-        theta = state_posterior(3);
-        point1 = state_posterior(1:2) + 150*[sind(theta); cosd(theta)];
-        point2 = state_posterior(1:2) - 150*[sind(theta); cosd(theta)];
-        
-        % Plot the line.
-        xy = [point1'; point2'];
-        if found_line
-            plot(xy(:,1),xy(:,2), 'b', 'LineWidth',2);
-        else
-            plot(xy(:,1),xy(:,2), 'b--', 'LineWidth',2);
-        end
-
-        % Plot beginnings and ends of lines
-        plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');
-        plot(xy(2,1),xy(2,2),'x','LineWidth',2,'Color','red');
+        vislines(new_line);
         
         drawnow;
     end
