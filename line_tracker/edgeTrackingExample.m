@@ -18,7 +18,8 @@ line_data.real = false;
 weights = [0; 3; 1];
 
 % Scale factor to go from pixels to real world units.
-scale_factor = 1;
+scale_factor = 6;
+camera_f = 510;
 
 % Initialize the position of the line.
 initial_pos.xy = [];
@@ -52,12 +53,14 @@ for i=start:start+n-1
 
     % Determine the change in position. Orientation is just the orientation
     % of the line.
-    delta_pos = line_data.state(1:2) - initial_pos.xy;
+    delta_pos = 1/camera_f * (line_data.state(1:2) - initial_pos.xy);
     pos(index+1, :) = [pos(initial_pos.index, 1:2)+delta_pos' line_data.state(3)+90];
 end
 
 %% Visualize the results
 figure;
-plot(pos);
+plot(start:start+n, scale_factor*pos(:, 1:2));
 hold on;
-plot(pose(1:3));
+plot(start:start+n, pose(:, 3) - pose(1, 3), 'b--');
+plot(start:start+n, pose(:, 1) - pose(1, 1), 'g--');
+plot(start:start+n, pose(:, 2) - pose(1, 2), 'r--');
