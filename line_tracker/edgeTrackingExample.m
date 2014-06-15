@@ -1,5 +1,5 @@
 if ~exist('frames', 'var')
-    load('crawlerTopXY.mat');
+    load('crawlerTopXYT.mat');
 end
 
 % Initialize frame variables.
@@ -54,7 +54,13 @@ for i=start:start+n-1
     % Determine the change in position. Orientation is just the orientation
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
-    pos(index+1, :) = [pos(initial_pos.index, 1:2)+delta_pos' line_data.state(3)+90];
+    theta = pos(initial_pos.index, 3);
+    phi = atan2(delta_pos(2), delta_pos(1));
+    r = norm(delta_pos, 2);
+    pos(index+1, :) = [pos(initial_pos.index, 1) + r * sind(phi - theta) ...
+                       pos(initial_pos.index, 2) + r * cosd(phi - theta) ...
+                       sign(line_data.state(3))*90 - line_data.state(3)];
+
 end
 
 %% Visualize the results
@@ -63,4 +69,9 @@ plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
 hold on;
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b');
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g');
-plot(start:start+n, pose(:, 2) - pose(1, 2), 'r');
+
+%%
+figure;
+plot(start:start+n, -pos(:, 3), '--');
+hold on;
+plot(start:start+n, pose(:, 5) - pose(1, 5), 'b');

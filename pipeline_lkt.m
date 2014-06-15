@@ -47,7 +47,9 @@ n = size(frames, 4) - start;
 visualize = false;
 
 % Scale factor for the crawler.
-scale_factor =  -6;
+scale_factor =  -5;
+% Focal length of the camera.
+camera_f = 510;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the LKT variables %
@@ -143,6 +145,7 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
+pos = TrackedObject.pos;
 save([pipe_name '_lkt_results.mat'], 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

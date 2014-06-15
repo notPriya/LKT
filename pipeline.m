@@ -236,6 +236,7 @@ for i = start:start+n-1
 end
 
 %% Save off the tracked information
+pos = TrackedObject.pos;
 save([pipe_name '_comb_results.mat'], 'pos');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
