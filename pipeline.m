@@ -47,8 +47,11 @@ n = size(frames, 4) - start;
 visualize = false;
 evaluation = true;
 
-% Scale factor for the crawler.
-scale_factor =  -6;
+% Scale factor for the crawler. Goes between vision units and real world
+% units.
+scale_factor =  -5;  % MAGIC
+% Constants based on pipe video.
+camera_f = 510;  % MAGIC
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the LKT variables %
@@ -75,10 +78,6 @@ end
 % Initialize the Joint         %
 % tracking variables           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Constants based on pipe video.
-camera_f = 510;  % MAGIC
-% Scale factor to go from pixels to real world units.
-pixel_scale_factor = 6;  % MAGIC
 
 % Weights on the features for picking best measurement.
 weights = [0; 3; 1];
@@ -97,16 +96,16 @@ initial_pos.needs_update = true;
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a structure for saving the results.
-TrackedObject.lkt_pos = zeros(n, 3);
-TrackedObject.jt_pos = zeros(n, 3);
-TrackedObject.pos = zeros(n, 3);
+TrackedObject.lkt_pos = zeros(n, 4);
+TrackedObject.jt_pos = zeros(n, 4);
+TrackedObject.pos = zeros(n, 4);
 % Time results.
 TrackedObject.time = zeros(n, 1);
 % LKT Results
 TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
 TrackedObject.template = cell(n, 1);
-TrackedObject.template_pos = zeros(n+1, 3);
+TrackedObject.template_pos = zeros(n+1, 4);
 % Joint Tracking Results.
 TrackedObject.lines = cell(n, 1);
 TrackedObject.initial_pos = cell(n, 1);
@@ -150,21 +149,27 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250); M(2, 2)/alpha*(180/pi)] + ...
                TrackedObject.template_pos(index, :)';
     
     % Update the initial position of the line if we are tracking a new
     % line.
     if line_data.real && initial_pos.needs_update
         initial_pos.xy = line_data.state(1:2);
-        initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), 1:2);
+        initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), :);
         initial_pos.needs_update = false;
     end
     
     % Determine the change in position. Orientation is just the orientation
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
-    jt_pos = [initial_pos.pos'+delta_pos; lkt_pos(3)];
+    theta = initial_pos.pos(4);
+    phi = atan2(delta_pos(2), delta_pos(1));
+    r = norm(delta_pos, 2);
+    jt_pos = [initial_pos.pos(1) + r * sind(phi - theta); ...
+              initial_pos.pos(2) + r * cosd(phi - theta); ...
+              lkt_pos(3); ...
+              sign(line_data.state(3))*90 - line_data.state(3)];
     
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
@@ -207,14 +212,13 @@ for i = start:start+n-1
     end
         
     % If we have moved past a threshold re-initialize the template.
-    if abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
+    if any(TrackedObject.pos(index, 1:3)-TrackedObject.template_pos(index, 1:3) > distance_threshold)
         % Clear the template and M.
         templateData = [];
         M = eye(3);
         % Update the template's position.
         TrackedObject.template_pos(index+1, :) = pos;
-    end
-    
+    end    
     
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the lines.
@@ -283,13 +287,22 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 hold on;
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos, '--', 'LineWidth', 2);
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos, '-.');
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos, '*');
+plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos(:, 1:3), '--', 'LineWidth', 2);
+plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-.');
+plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '*');
 
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
 plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
+
+%%
+figure;
+hold on;
+plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
+plot(start:start+n-1, -TrackedObject.jt_pos(:, 4), '-.');
+plot(start:start+n-1, -TrackedObject.lkt_pos(:, 4), '*');
+
+plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
