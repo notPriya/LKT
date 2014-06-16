@@ -7,7 +7,7 @@ start = 1;
 n = size(frames, 4) - start;
 
 % Plotting stuff.
-evaluation = false;
+evaluation = true;
 
 % Initialize the first line to track.
 line_data.state = zeros(6, 1);
@@ -55,10 +55,10 @@ for i=start:start+n-1
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
     theta = pos(initial_pos.index, 3);
-    phi = atan2(delta_pos(2), delta_pos(1));
+    phi = atan2d(delta_pos(2), delta_pos(1));
     r = norm(delta_pos, 2);
-    pos(index+1, :) = [pos(initial_pos.index, 1) + r * sind(phi - theta) ...
-                       pos(initial_pos.index, 2) + r * cosd(phi - theta) ...
+    pos(index+1, :) = [pos(initial_pos.index, 1) + r * cosd(phi - theta) ...
+                       pos(initial_pos.index, 2) + r * sind(phi - theta) ...
                        sign(line_data.state(3))*90 - line_data.state(3)];
 
 end

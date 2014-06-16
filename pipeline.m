@@ -149,7 +149,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250); M(2, 2)/alpha*(180/pi)] + ...
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250); M(1, 2)/alpha*(180/pi)] + ...
                TrackedObject.template_pos(index, :)';
     
     % Update the initial position of the line if we are tracking a new
@@ -164,20 +164,20 @@ for i = start:start+n-1
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
     theta = initial_pos.pos(4);
-    phi = atan2(delta_pos(2), delta_pos(1));
+    phi = atan2d(delta_pos(2), delta_pos(1));
     r = norm(delta_pos, 2);
-    jt_pos = [initial_pos.pos(1) + r * sind(phi - theta); ...
-              initial_pos.pos(2) + r * cosd(phi - theta); ...
-              lkt_pos(3); ...
+    jt_pos = [initial_pos.pos(1) + r * cosd(phi - theta); ...
+              initial_pos.pos(2) + r * sind(phi - theta); ...
+              0; ...
               sign(line_data.state(3))*90 - line_data.state(3)];
     
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
-    gamma = 0.5; % Mixing factor.
+    gamma = [0.9; 0.7; 1; 0.1]; % Mixing factor.
     
     % Combine the LKT position estimate and the joint tracking position
     % estimate.
-    pos = gamma * lkt_pos + (1-gamma) * jt_pos;
+    pos = gamma .* lkt_pos + (1-gamma) .* jt_pos;
         
     %%%%%%%%%%%%%%%%%%%%%
     % Save Results.
@@ -332,6 +332,6 @@ message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObjec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear I M T alpha distance_threshold error i template templateData index ...
-			ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess ...
+			ground_truth gamma circle small_delta_radius_guess small_radius_guess ...
 			weights update_pos ration pipe_radius initial_pos jt_pos lkt_pos delta pos ...
 			ratio date_string figure_filename message_format message;
