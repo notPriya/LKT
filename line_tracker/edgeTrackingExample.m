@@ -67,11 +67,11 @@ end
 figure;
 plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
 hold on;
-plot(start:start+n, pose(:, 3) - pose(1, 3), 'b');
-plot(start:start+n, pose(:, 1) - pose(1, 1), 'g');
+plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
+plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
 
 %%
 figure;
-plot(start:start+n, -pos(:, 3), '--');
+plot(start:start+n, -pos(:, 3), '--', 'LineWidth', 2);
 hold on;
-plot(start:start+n, pose(:, 5) - pose(1, 5), 'b');
+plot(start:start+n, pose(:, 5) - pose(1, 5), 'k', 'LineWidth', 2);
