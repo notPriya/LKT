@@ -34,7 +34,7 @@ camera_f = 510;
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 templateData = [];
-distance_threshold = .1;
+distance_threshold = 10;
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
@@ -79,7 +79,7 @@ for i = start:start+n-1
                     M, warp, templateData, odom_rect);
     
     % If we got some bad data, get rid of it.
-    if abs((1 - M(1,1))*510*(1/250)) > 1.5 * distance_threshold
+    if abs((1 - M(1,1))*camera_f) > 1.5 * distance_threshold
         M = TrackedObject.M(:, :, index-1);  % Use the old M.
     end
     
@@ -94,7 +94,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
+    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*camera_f] + ...
            TrackedObject.template_pos(index, :)';
             
     %%%%%%%%%%%%%%%%%%%%%
@@ -111,8 +111,10 @@ for i = start:start+n-1
     TrackedObject.template{index} = templateData;
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);    
             
+    abs(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :))
+    
     % If we have moved past a threshold re-initialize the template.
-    if any(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :) > distance_threshold)
+    if any(abs(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :)) > distance_threshold)
         % Clear the template and M.
         templateData = [];
         M = eye(3);
@@ -196,6 +198,6 @@ message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObjec
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear I M T alpha distance_threshold error i template templateData index ...
-			ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess ...
+			ground_truth gamma circle small_delta_radius_guess small_radius_guess ...
 			weights update_pos ration pipe_radius initial_pos jt_pos lkt_pos delta pos ...
 			ratio date_string figure_filename message_format message;
