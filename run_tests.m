@@ -1,13 +1,22 @@
 close all;
-clear frames init_state odom_rect TrackedObject;
+clear all;
 
-pipe_name = 'pipe5';
+pipe_name = 'crawlerTopX';
 
 pipeline;
 
-close all;
-clear frames init_state odom_rect TrackedObject;
+drawnow;
+% close all;
+clear all;
 
-pipe_name = 'pipe6';
+pipe_name = 'crawlerTopXY';
+
+pipeline;
+
+drawnow;
+% close all;
+clear all;
+
+pipe_name = 'crawlerTopXYT';
 
 pipeline;
