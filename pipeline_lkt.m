@@ -39,16 +39,6 @@ distance_threshold = 10;
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
 
-% Get the odometry bounding box.
-if ~exist('odom_rect', 'var')
-    imshow(frames(:,:,:,5));
-    [x, y] = ginput(2);
-    odom_rect = [min(size(frames, 2), max(1, x')) ...
-                 min(size(frames, 1), max(1, y'))];
-    odom_rect = int16(odom_rect);
-    clear x y;
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,10 +66,10 @@ for i = start:start+n-1
     [M, templateData, error] = ...
         LucasKanade(frames(:, :, :, i), ...
                     frames(:, :, :, i+1), ...
-                    M, warp, templateData, odom_rect);
+                    M, warp, templateData);
     
     % If we got some bad data, get rid of it.
-    if abs((1 - M(1,1))*camera_f) > 1.5 * distance_threshold
+    if abs((1 - M(1,1))*camera_f) > 3 * distance_threshold
         M = TrackedObject.M(:, :, index-1);  % Use the old M.
     end
     
@@ -111,8 +101,6 @@ for i = start:start+n-1
     TrackedObject.template{index} = templateData;
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);    
             
-    abs(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :))
-    
     % If we have moved past a threshold re-initialize the template.
     if any(abs(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :)) > distance_threshold)
         % Clear the template and M.
