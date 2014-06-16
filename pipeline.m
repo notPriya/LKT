@@ -36,20 +36,10 @@ camera_f = 510;  % MAGIC
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 templateData = [];
-distance_threshold = .1;
+distance_threshold = 10;
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
-
-% Get the odometry bounding box.
-if ~exist('odom_rect', 'var')
-    imshow(frames(:,:,:,5));
-    [x, y] = ginput(2);
-    odom_rect = [min(size(frames, 2), max(1, x')) ...
-                 min(size(frames, 1), max(1, y'))];
-    odom_rect = int16(odom_rect);
-    clear x y;
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the Joint         %
@@ -101,10 +91,10 @@ for i = start:start+n-1
     [M, templateData, error] = ...
         LucasKanade(frames(:, :, :, i), ...
                     frames(:, :, :, i+1), ...
-                    M, warp, templateData, odom_rect);
+                    M, warp, templateData);
     
     % If we got some bad data, get rid of it.
-    if abs((1 - M(1,1))*510*(1/250)) > 1.5 * distance_threshold
+    if abs((1 - M(1,1))*camera_f) > 3 * distance_threshold
         M = TrackedObject.M(:, :, index-1);  % Use the old M.
     end
             
@@ -126,7 +116,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250); M(1, 2)/alpha*(180/pi)] + ...
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*camera_f; M(1, 2)/alpha*(180/pi)] + ...
                TrackedObject.template_pos(index, :)';
     
     % Update the initial position of the line if we are tracking a new
@@ -181,7 +171,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Update the information from the position, if the line is real.
     if line_data.real
-        alpha = 1 - 250 * 1/510 * (pos(3) - TrackedObject.template_pos(index, 3));
+        alpha = 1 - 1/camera_f * (pos(3) - TrackedObject.template_pos(index, 3));
         M(1,1) = alpha;
         M(2,2) = alpha;
     %     psi = 0.5;
@@ -189,13 +179,13 @@ for i = start:start+n-1
     end
         
     % If we have moved past a threshold re-initialize the template.
-    if any(TrackedObject.pos(index, 1:3)-TrackedObject.template_pos(index, 1:3) > distance_threshold)
+    if any(abs(TrackedObject.pos(index, :)-TrackedObject.template_pos(index, :)) > distance_threshold)
         % Clear the template and M.
         templateData = [];
         M = eye(3);
         % Update the template's position.
         TrackedObject.template_pos(index+1, :) = pos;
-    end    
+    end
     
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the lines.
