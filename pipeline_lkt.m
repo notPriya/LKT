@@ -19,6 +19,9 @@ start = 1;
 n = size(frames, 4) - start;
 visualize = false;
 
+% Constant for the amount of the image we ignore,
+border_size = 10;
+
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 templateData = [];
@@ -31,8 +34,8 @@ warp = getRigidBodyWarp();
 if ~exist('odom_rect', 'var')
     imshow(frames(:,:,:,5));
     [x, y] = ginput(2);
-    odom_rect = [min(size(frames, 2)-100, max(1, x'-50)) ...
-                 min(size(frames, 1)-100, max(1, y'-50))];
+    odom_rect = [min(size(frames, 2)-2*border_size, max(1, x'-border_size)) ...
+                 min(size(frames, 1)-2*border_size, max(1, y'-border_size))];
     odom_rect = int16(odom_rect);
     clear x y;
 end
@@ -40,7 +43,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Create a structure for saving the results.TrackedObject.M = zeros(3, 3, n);
+% Create a structure for saving the results.
 TrackedObject.pos = zeros(n, 3);
 % Time results.
 TrackedObject.time = zeros(n, 1);
@@ -60,8 +63,8 @@ for i = start:start+n-1
     tic;
     % Run Lucas-Kanade Tracker 
     [M, templateData, error] = ...
-        LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
-                    frames(50:end-50, 50:end-50, :, i+1), ...
+        LucasKanade(frames(border_size:end-border_size, border_size:end-border_size, :, i), ...
+                    frames(border_size:end-border_size, border_size:end-border_size, :, i+1), ...
                     M, warp, templateData, odom_rect);
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
@@ -74,12 +77,15 @@ for i = start:start+n-1
     alpha = M(1, 1);
     
     % Add to result
+    % Distance results
+    TrackedObject.pos(index, :) = [M(1, 3)/alpha M(2, 3)/alpha (1 - alpha)*510*(1/250)];
+    % Time results.
+    TrackedObject.time(index) = t;
+    % LKT Results
     TrackedObject.M(:, :, index) = M;
     TrackedObject.error{index} = error;
-    TrackedObject.pos(index, :) = [M(1, 3)/alpha M(2, 3)/alpha (1 - alpha)*510*(1/250)];
     TrackedObject.template{index} = templateData;
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
-    TrackedObject.time(index) = t;
     
     % If we got some bad data, get rid of it.
     if abs(TrackedObject.pos(index, 3)) > 1.5*distance_threshold
@@ -114,7 +120,7 @@ save([pipe_name '_lkt_result.mat'], 'pos');
 if visualize
     for i = start:start+n-1
         % Extract the image.
-        I = preprocessImage(frames(50:end-50,50:end-50,:,i+1), true, false);
+        I = preprocessImage(frames(border_size:end-border_size, border_size:end-border_size, :,i+1), true, false);
 
         % Determine the optimal affine transform.
         M = TrackedObject.M(:, :, i-start+1);

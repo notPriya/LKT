@@ -21,6 +21,9 @@ n = size(frames, 4) - start;
 visualize = false;
 evaluation = true;
 
+% Constant for the amount of the image we ignore,
+border_size = 10;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the LKT variables %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,8 +39,8 @@ warp = getRigidBodyWarp();
 if ~exist('odom_rect', 'var')
     imshow(frames(:,:,:,5));
     [x, y] = ginput(2);
-    odom_rect = [min(size(frames, 2)-100, max(1, x'-50)) ...
-                 min(size(frames, 1)-100, max(1, y'-50))];
+    odom_rect = [min(size(frames, 2)-2*border_size, max(1, x'-border_size)) ...
+                 min(size(frames, 1)-2*border_size, max(1, y'-border_size))];
     odom_rect = int16(odom_rect);
     clear x y;
 end
@@ -109,8 +112,8 @@ for i = start:start+n-1
     tic;
     % Run Lucas-Kanade Tracker 
     [M, templateData, error] = ...
-        LucasKanade(frames(50:end-50, 50:end-50, :, i), ...
-                    frames(50:end-50, 50:end-50, :, i+1), ...
+        LucasKanade(frames(border_size:end-border_size, border_size:end-border_size, :, i), ...
+                    frames(border_size:end-border_size, border_size:end-border_size, :, i+1), ...
                     M, warp, templateData, odom_rect);
     
     % If we got some bad data, get rid of it.
@@ -165,8 +168,6 @@ for i = start:start+n-1
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
-    lkt_score = NaN;
-    jt_score = NaN;
     if circle.real && ~update_pos
         gamma = 0.6;
     end
@@ -199,9 +200,6 @@ for i = start:start+n-1
     TrackedObject.template_pos(index+1, :) = TrackedObject.template_pos(index, :);
     % Joint tracking results
     TrackedObject.circles{index} = circle;
-    % Weighted average results.
-    TrackedObject.errors(index, :) = [min(error) jt_error];
-    TrackedObject.score(index, :) = [lkt_score jt_score gamma];
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -275,7 +273,7 @@ save([pipe_name '_comb_results.mat'], 'pos');
 if visualize
     for i = start:start+n-1
         % Extract the image.
-        I = preprocessImage(frames(50:end-50,50:end-50,:,i+1), true, false);
+        I = preprocessImage(frames(border_size:end-border_size, border_size:end-border_size, :,i+1), true, false);
 
         % Determine the optimal affine transform.
         M = TrackedObject.M(:, :, i-start+1);
