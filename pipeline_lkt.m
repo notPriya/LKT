@@ -1,20 +1,28 @@
-%% Initialize the environment
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Initialize the environment  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clc;
 
 addpath ./toolbox
 
 % pipe_name = 'pipe2';
 
+% Load the frames to process.
 if ~exist('frames', 'var')
     load([pipe_name '.mat']);
 end
 
+% Setup the email client
+setup_mail;
+
 start = 1;
-n = (size(frames, 4)-start);
+n = size(frames, 4) - start;
 visualize = false;
 
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
+templateData = [];
+distance_threshold = .1;
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
@@ -26,18 +34,26 @@ if ~exist('odom_rect', 'var')
     odom_rect = [min(size(frames, 2)-100, max(1, x'-50)) ...
                  min(size(frames, 1)-100, max(1, y'-50))];
     odom_rect = int16(odom_rect);
+    clear x y;
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Initialize the result struct %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Create a structure for saving the results.TrackedObject.M = zeros(3, 3, n);
+TrackedObject.pos = zeros(n, 3);
+% Time results.
+TrackedObject.time = zeros(n, 1);
+% LKT Results
 TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
-TrackedObject.pos = zeros(n, 3);
 TrackedObject.template = cell(n, 1);
 TrackedObject.template_pos = zeros(n+1, 3);
-TrackedObject.time = zeros(n, 1);
-distance_threshold = .1;
 
-%% For each image run the LKT
-templateData = [];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% For each image run the LKT  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for i = start:start+n-1
     index = i-start + 1;
 
@@ -92,7 +108,9 @@ pos = TrackedObject.pos + TrackedObject.template_pos(1:end-1, :);
 %% Save off the tracked information
 save([pipe_name '_lkt_result.mat'], 'pos');
 
-%% Visualize
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Visualize                   %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
     for i = start:start+n-1
         % Extract the image.
@@ -122,7 +140,9 @@ if visualize
     end
 end
 
-%% Visualize the z-axis motion.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Visualize the z-axis motion %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % load([pipe_name '_groundtruth.mat']);
 figure;
 plot(start:start+n-1, pos(:, 3)*0.3048*0.22, 'b');
@@ -131,7 +151,36 @@ hold on;
 plot(start:start+n, TrackedObject.template_pos(:, 3)*0.3048*0.22, 'r')
 plot(start:start+n-1, TrackedObject.pos(:, 3)*0.3048*0.22, 'g')
 % plot(start:start+n, (ground_truth(start:start+n) - ground_truth(start))/10, 'k')
+% axis([0 start+n-1 0 max(ground_truth-ground_truth(start))/10]);
 
-%% Clean up environment.
+%% Save to a PNG file with today's date and time.
+date_string = datestr(now,'yy_mm_dd_HH_MM');
+figure_filename = [pipe_name '_results_' date_string '.png'];
+saveas(gcf, figure_filename , 'png');
 
-clear I M T alpha distance_threshold error i template templateData index ground_truth x y ans;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Send Email to the user.     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+message_format = ['Video:\t\t\t%s\n' ...
+                  'Start Frame:\t\t%d\n' ...
+                  'End Frame:\t\t%d\n\n' ...
+                  'Average Time:\t\t%f\n\n' ...
+                  'Total Time:\t\t%f\n\n' ...
+                  'ExtraInfo:\n\n' ...
+                  'Testing improvements from changing the findDarkRegions function.' ...
+                 ];
+
+message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
+
+
+emailResults(message, figure_filename);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Clean up environment.       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear I M T alpha distance_threshold error i template templateData index ...
+			ground_truth gamma circle camera_f small_delta_radius_guess small_radius_guess ...
+			weights update_pos ration pipe_radius initial_pos jt_pos lkt_pos delta pos ...
+			ratio date_string figure_filename message_format message;
