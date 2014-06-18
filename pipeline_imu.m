@@ -41,9 +41,9 @@ accel(2:3, 3) = 0;  % Weird thing about the first position reading.
 gyro = diff(pose(:, 5));
 gyro = interp1(gyro, 0:n, 'cubic', 'extrap')';
 
-% % Add noise to the measurements.
-% accel = accel + normrnd(0, 0.01, size(accel));
-% gyro = gyro + normrnd(0, 0.01, size(gyro));
+% Add noise to the measurements.
+accel = accel + normrnd(0, 0.01, size(accel));
+gyro = gyro + normrnd(0, 0.01, size(gyro));
 
 % Get the unfiltered IMU position estimates for comparison.
 true_imu_pos = [0 0 0 0];
@@ -317,26 +317,22 @@ figure;
 hold on;
 plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos(:, 1:3), '--', 'LineWidth', 2);
 plot(start:start+n-1, scale_factor*1./camera_f*pos, '--');
-% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-.');
-% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '*');
 
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
 plot(start:start+n, pose(:, 2) - pose(2, 2), 'r', 'LineWidth', 2);
 
-% %%
-% figure;
-% hold on;
-% plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
-% % plot(start:start+n-1, -TrackedObject.jt_pos(:, 4), '-.');
-% % plot(start:start+n-1, -TrackedObject.lkt_pos(:, 4), '*');
-% 
-% plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
+%%
+figure;
+hold on;
+plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
+
+plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
-% saveas(gcf, figure_filename , 'png');
+saveas(gcf, figure_filename , 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the z-axis motion %
@@ -353,8 +349,7 @@ message_format = ['Video:\t\t\t%s\n' ...
 
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
 
-
-% emailResults(message, figure_filename);
+emailResults(message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %
