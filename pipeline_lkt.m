@@ -84,7 +84,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*camera_f] + ...
+    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f] + ...
            TrackedObject.template_pos(index, :)';
             
     %%%%%%%%%%%%%%%%%%%%%

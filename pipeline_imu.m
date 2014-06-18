@@ -31,6 +31,45 @@ scale_factor =  -5;  % MAGIC
 camera_f = 510;  % MAGIC
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Get accel and gyro values    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calculate the accelerometer and gyroscope values using the groundtruth
+% position information.
+accel = diff(pose(:, [3 1 2]), 2);
+accel = interp1(accel, -1:n-1, 'cubic', 'extrap');
+accel(2:3, 3) = 0;  % Weird thing about the first position reading.
+gyro = diff(pose(:, 5));
+gyro = interp1(gyro, 0:n, 'cubic', 'extrap')';
+
+% % Add noise to the measurements.
+% accel = accel + normrnd(0, 0.01, size(accel));
+% gyro = gyro + normrnd(0, 0.01, size(gyro));
+
+% Get the unfiltered IMU position estimates for comparison.
+true_imu_pos = [0 0 0 0];
+vel = [0 0 0];
+for i=1:n+1
+    vel = vel + accel(i, :);
+    true_imu_pos(i+1, :) = true_imu_pos(i, :) + [vel gyro(i)];
+end
+true_imu_pos = true_imu_pos(2:end, :);
+clear vel i;
+
+% Show the IMU position estimate.
+figure;
+hold on;
+plot(start:start+n, true_imu_pos(:, 1:3), '*--', 'LineWidth', 2);
+plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
+plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
+plot(start:start+n, pose(:, 2) - pose(2, 2), 'r', 'LineWidth', 2);
+drawnow;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Initialize the IMU variables %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+velocity = [0 0 0];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Initialize the LKT variables %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The initial assumption is that we havent transformed.
@@ -65,6 +104,7 @@ initial_pos.needs_update = true;
 % Create a structure for saving the results.
 TrackedObject.lkt_pos = zeros(n, 4);
 TrackedObject.jt_pos = zeros(n, 4);
+TrackedObject.imu_pos = zeros(n, 4);
 TrackedObject.pos = zeros(n, 4);
 % Time results.
 TrackedObject.time = zeros(n, 1);
@@ -76,6 +116,9 @@ TrackedObject.template_pos = zeros(n+1, 4);
 % Joint Tracking Results.
 TrackedObject.lines = cell(n, 1);
 TrackedObject.initial_pos = cell(n, 1);
+% IMU Results
+TrackedObject.velocity = zeros(n, 3);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -110,6 +153,12 @@ for i = start:start+n-1
     if mod(i, 200) == 0
         disp(i);
     end
+
+    %%%%%%%%%%%%%%%%%%%%%
+    % IMU Estimation
+    %%%%%%%%%%%%%%%%%%%%%
+    % Integrate to get the robot velocity.
+    velocity = velocity + accel(index, :);
     
     %%%%%%%%%%%%%%%%%%%%%
     % Distance Estimation
@@ -137,14 +186,22 @@ for i = start:start+n-1
               initial_pos.pos(2) + r * sind(phi - theta); ...
               0; ...
               sign(line_data.state(3))*90 - line_data.state(3)];
+          
+    % Use the IMU to estimate position.
+    imu_pos = TrackedObject.pos(max(1, index-1), :)' + camera_f/scale_factor * [velocity'; gyro(index)];
     
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
-    gamma = [0.9; 0.7; 1; 0.1]; % Mixing factor.
+    alpha = [0.5; 0.4; 0.5; 0.1]; % Mixing factor for LKT.
+    beta = [0.3; 0.3; 0.5; 0.3]; % Mixing factor for gyros.
+    
+    if any(alpha+beta > 1)
+        error('Error in setting alpha and beta.');
+    end
     
     % Combine the LKT position estimate and the joint tracking position
     % estimate.
-    pos = gamma .* lkt_pos + (1-gamma) .* jt_pos;
+    pos = alpha .* lkt_pos + (1-alpha-beta) .* jt_pos + beta .* imu_pos;
         
     %%%%%%%%%%%%%%%%%%%%%
     % Save Results.
@@ -153,6 +210,7 @@ for i = start:start+n-1
     % Distance results
     TrackedObject.lkt_pos(index, :) = lkt_pos;
     TrackedObject.jt_pos(index, :) = jt_pos;
+    TrackedObject.imu_pos(index, :) = imu_pos;
     TrackedObject.pos(index, :) = pos;
     % Time results.
     TrackedObject.time(index) = t;
@@ -164,6 +222,8 @@ for i = start:start+n-1
     % Line tracking results
     TrackedObject.lines{index} = line_data;
     TrackedObject.initial_pos{index} = initial_pos;
+    % IMU Results
+    TrackedObject.velocity(index, :) = velocity;
     
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -208,7 +268,7 @@ end
 
 %% Save off the tracked information
 pos = TrackedObject.pos;
-save([pipe_name '_comb_results.mat'], 'pos');
+save([pipe_name '_imu_results.mat'], 'pos', 'accel', 'gyro');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize                   %
@@ -252,24 +312,26 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the robot motion  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+load([pipe_name '_comb_results.mat']);
 figure;
 hold on;
 plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos(:, 1:3), '--', 'LineWidth', 2);
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-.');
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '*');
+plot(start:start+n-1, scale_factor*1./camera_f*pos, '--');
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-.');
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '*');
 
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
-plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
+plot(start:start+n, pose(:, 2) - pose(2, 2), 'r', 'LineWidth', 2);
 
-%%
-figure;
-hold on;
-plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
-plot(start:start+n-1, -TrackedObject.jt_pos(:, 4), '-.');
-plot(start:start+n-1, -TrackedObject.lkt_pos(:, 4), '*');
-
-plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
+% %%
+% figure;
+% hold on;
+% plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
+% % plot(start:start+n-1, -TrackedObject.jt_pos(:, 4), '-.');
+% % plot(start:start+n-1, -TrackedObject.lkt_pos(:, 4), '*');
+% 
+% plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
