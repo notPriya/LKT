@@ -1,3 +1,8 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Initialize the environment  %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc;
+
 % Determine which video to use.
 if ~exist('pipe_name', 'var')	
 	pipe_name = input('Which crawler video should we use?   ', 's');
