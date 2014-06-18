@@ -19,8 +19,11 @@ end
 % Setup the email client.
 setup_mail;
 
+% Initialize frame variables.
 start = 1;
 n = size(frames, 4) - start;
+
+% Plotting stuff.
 visualize = false;
 evaluation = true;
 
@@ -180,9 +183,9 @@ for i = start:start+n-1
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
     theta = initial_pos.pos(4);
-    phi = atan2d(delta_pos(2), delta_pos(1));
+    phi = atan2d(delta_pos(1), delta_pos(2)) + 90;
     r = norm(delta_pos, 2);
-    jt_pos = [initial_pos.pos(1) + r * cosd(phi - theta); ...
+    jt_pos = [initial_pos.pos(1) - r * cosd(phi - theta); ...
               initial_pos.pos(2) + r * sind(phi - theta); ...
               0; ...
               sign(line_data.state(3))*90 - line_data.state(3)];
