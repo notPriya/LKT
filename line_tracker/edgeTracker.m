@@ -20,7 +20,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
          0 0 5];
      
     % Measurement rejection Threshold
-    error_threshold = 30;
+    error_threshold = 15;
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Time Update (Prediction)          %
@@ -38,7 +38,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
     
     if previous_line.real
         [measurement, features, line] = trackLine(state_prior, covariance_prior, weights);
-        found_line = true;
+        found_line = ~isempty(measurement);
     else
         [measurement, line] = initializeLine();
         % HACK: this makes sure that we arent going in the direction of the

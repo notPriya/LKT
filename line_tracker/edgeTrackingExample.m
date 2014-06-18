@@ -1,5 +1,11 @@
+% Determine which video to use.
+if ~exist('pipe_name', 'var')	
+	pipe_name = input('Which crawler video should we use?   ', 's');
+end
+
+% Load the frames to process.
 if ~exist('frames', 'var')
-    load('crawlerTopXYT.mat');
+    load([pipe_name '.mat']);
 end
 
 % Initialize frame variables.
@@ -30,7 +36,7 @@ initial_pos.needs_update = true;
 pos = zeros(n, 3);
 
 % Run the edge tracker.
-for i=start:start+n-1
+for i=start:start+n
     index = i-start + 1;
     
     % Get the preprocessed image.
@@ -41,7 +47,7 @@ for i=start:start+n-1
     % line.
     if line_data.real && initial_pos.needs_update
         initial_pos.xy = line_data.state(1:2);
-        initial_pos.index = index;
+        initial_pos.index = max(1, index-1);
         initial_pos.needs_update = false;
     end
     
@@ -55,18 +61,20 @@ for i=start:start+n-1
     % of the line.
     delta_pos = initial_pos.xy - line_data.state(1:2);
     theta = pos(initial_pos.index, 3);
-    phi = atan2d(delta_pos(2), delta_pos(1));
+    phi = atan2d(delta_pos(1), delta_pos(2)) + 90;
     r = norm(delta_pos, 2);
-    pos(index+1, :) = [pos(initial_pos.index, 1) + r * cosd(phi - theta) ...
-                       pos(initial_pos.index, 2) + r * sind(phi - theta) ...
-                       sign(line_data.state(3))*90 - line_data.state(3)];
+    
+    pos(index, :) = [pos(initial_pos.index, 1) - r * cosd(phi - theta) ...
+                     pos(initial_pos.index, 2) + r * sind(phi - theta) ...
+                     sign(line_data.state(3))*90 - line_data.state(3)];
 
 end
 
 %% Visualize the results
 figure;
-plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
 hold on;
+plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
+
 plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
 plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
 
