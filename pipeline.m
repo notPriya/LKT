@@ -313,14 +313,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the z-axis motion %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-load([pipe_name '_groundtruth.mat']);
+% load([pipe_name '_groundtruth.mat']);
 figure;
-plot(start:start+n-1, TrackedObject.pos(:, 3), 'b');
+plot(start:start+n-1, TrackedObject.pos(:, 3)*0.3048*0.22, 'b');
+% plot(start:start+n-1, TrackedObject.pos(:, 3), 'b');
 hold on;
-plot(start:start+n-1, TrackedObject.lkt_pos(:, 3), 'm');
-plot(start:start+n-1, TrackedObject.jt_pos(:, 3), 'g');
-plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
-axis([0 start+n-1 0 max(ground_truth-ground_truth(start))/10]);
+plot(start:start+n-1, TrackedObject.lkt_pos(:, 3)*0.3048*0.22, 'm');
+plot(start:start+n-1, TrackedObject.jt_pos(:, 3)*0.3048*0.22, 'g');
+% plot(start:start+n-1, (ground_truth(start:start+n-1) - ground_truth(start))/10, 'k')
+% axis([0 start+n-1 0 max(ground_truth-ground_truth(start))/10]);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
@@ -337,7 +338,7 @@ message_format = ['Video:\t\t\t%s\n' ...
                   'Average Time:\t\t%f\n\n' ...
                   'Total Time:\t\t%f\n\n' ...
                   'ExtraInfo:\n\n' ...
-                  'Testing improvements from changing the findDarkRegions function.' ...
+                  'Testing out the videos from the actual robot.' ...
                  ];
 
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
