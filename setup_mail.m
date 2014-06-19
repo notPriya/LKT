@@ -11,11 +11,13 @@ if ~strcmp(getpref('Internet', 'SMTP_Username'), 'pdeo')
     clc;
     % Pause matlab so user can clear password.
     input('Please clear password from command history.');
-    
-    % Setup the SSL connection.
-    props = java.lang.System.getProperties;
+end
+% Setup the SSL connection.
+props = java.lang.System.getProperties;
+if isempty(props.getProperty('mail.smtp.auth'))
     props.setProperty('mail.smtp.auth','true');
     props.setProperty('mail.smtp.socketFactory.class', ...
                       'javax.net.ssl.SSLSocketFactory');
     props.setProperty('mail.smtp.socketFactory.port','465'); 
 end
+clear props;
