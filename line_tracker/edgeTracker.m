@@ -37,7 +37,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     if previous_line.real
-        [measurement, features, line] = trackLine(state_prior, covariance_prior, weights);
+        [measurement, line] = trackLine(state_prior, covariance_prior, weights);
         found_line = ~isempty(measurement);
     else
         [measurement, line] = initializeLine();
@@ -164,7 +164,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
     end
 
     % Finds the lines in the image that are close to the prior.
-    function [measurement, features, line] = trackLine(state_prior, covariance_prior, weights)
+    function [measurement, line] = trackLine(state_prior, covariance_prior, weights)
         % Use Hough Transform to find lines in the image.
         lines = imfindlines(I);
         
