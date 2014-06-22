@@ -18,12 +18,13 @@ start = 1;
 n = size(frames, 4) - start;
 
 % Plotting stuff.
-evaluation = true;
+evaluation = false;
 
 % Initialize the first line to track.
 line_data.state = zeros(6, 1);
 line_data.sigma = eye(6);
 line_data.real = false;
+line_data.skip = false;
 
 % Initialize the weights.
 weights = [0; 3; 1];
@@ -54,11 +55,12 @@ for i=start:start+n
         initial_pos.xy = line_data.state(1:2);
         initial_pos.index = max(1, index-1);
         initial_pos.needs_update = false;
+        line_data.skip = 0;
     end
     
-    % If we have lost the line, make sure we update the initial pos the
-    % next time we find a line.
-    if ~line_data.real
+    % If we have lost the line and skipped one frame, make sure we update
+    % the initial pos the next time we find a line.
+    if line_data.skip > 1
         initial_pos.needs_update = true;
     end
 

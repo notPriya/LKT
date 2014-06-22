@@ -36,9 +36,16 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
     % Take a measurement                %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    if previous_line.real
+    if previous_line.real || previous_line.skip
         [measurement, line] = trackLine(state_prior, covariance_prior, weights);
         found_line = ~isempty(measurement);
+        
+        % Pretend we got the predicted line as our measurement to keep the
+        % covariance low.
+        if ~found_line && previous_line.skip
+            measurement = state_prior(1:3);
+            previous_line.skip = previous_line.skip + 1;
+        end
     else
         [measurement, line] = initializeLine();
         % HACK: this makes sure that we arent going in the direction of the
@@ -63,7 +70,14 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
         if weighted_norm > error_threshold
             measurement = [];
             found_line = false;
-        end        
+        end
+        
+        % If we are throwing out a line, but we are allowed to skip, use
+        % the prior as our measurement to keep covariance from growing.
+        if ~found_line && previous_line.skip
+            measurement = state_prior(1:3);
+            previous_line.skip = previous_line.skip + 1;
+        end
     end
     
     
@@ -94,6 +108,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, previous_line
     new_line.state = state_posterior;
     new_line.sigma = covariance_posterior;
     new_line.real = found_line;
+    new_line.skip = previous_line.skip;
    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Visualize the found lines   %
