@@ -24,10 +24,11 @@ evaluation = false;
 line_data.state = zeros(6, 1);
 line_data.sigma = eye(6);
 line_data.real = false;
-line_data.skip = false;
+line_data.skip = Inf;
 
 % Initialize the weights.
 weights = [0; 3; 1];
+num_skips = 0;
 
 % Scale factor to go from pixels to real world units.
 scale_factor = -5;
@@ -47,7 +48,7 @@ for i=start:start+n
     
     % Get the preprocessed image.
     I = preprocessImage(frames(:,:,:,i), true, false);
-    [line_data] = edgeTracker(I, weights, line_data, evaluation);
+    [line_data] = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
     % Update the initial position of the line if we are tracking a new
     % line.
@@ -60,7 +61,7 @@ for i=start:start+n
     
     % If we have lost the line and skipped one frame, make sure we update
     % the initial pos the next time we find a line.
-    if line_data.skip > 1
+    if line_data.skip > num_skips
         initial_pos.needs_update = true;
     end
 
