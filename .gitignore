@@ -232,4 +232,4 @@ pip-log.txt
 results/
 *_result.avi
 *.jpg
-pipe*_results_*.png
+*_results_*.png
