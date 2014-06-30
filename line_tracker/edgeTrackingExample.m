@@ -18,7 +18,7 @@ start = 1;
 n = size(frames, 4) - start;
 
 % Plotting stuff.
-evaluation = false;
+evaluation = true;
 
 % Initialize the first line to track.
 line_data.state = zeros(6, 1);
@@ -28,7 +28,7 @@ line_data.skip = Inf;
 
 % Initialize the weights.
 weights = [0; 3; 1];
-num_skips = 0;
+num_skips = 1;
 
 % Scale factor to go from pixels to real world units.
 scale_factor = -5;
