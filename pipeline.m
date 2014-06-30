@@ -51,11 +51,13 @@ warp = getRigidBodyWarp();
 
 % Weights on the features for picking best measurement.
 weights = [0; 3; 1];
+num_skips = 1;
 
 % Initialize the first line to track.
 line_data.state = zeros(6, 1);
 line_data.sigma = eye(6);
 line_data.real = false;
+line_data.skip = Inf;
 
 % Initialize the position of the line.
 initial_pos.xy = [];
@@ -106,7 +108,7 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the preprocessed image.
     I = preprocessImage(frames(:,:,:,i), true, false);
-    line_data = edgeTracker(I, weights, line_data, evaluation);
+    line_data = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
     t = toc;
     fprintf('Elapsed time is %f seconds.\n', t);
@@ -128,6 +130,7 @@ for i = start:start+n-1
         initial_pos.xy = line_data.state(1:2);
         initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), :);
         initial_pos.needs_update = false;
+        line_data.skip = 0;
     end
     
     % Determine the change in position. Orientation is just the orientation
@@ -177,8 +180,6 @@ for i = start:start+n-1
         alpha = 1 - 1/camera_f * (pos(3) - TrackedObject.template_pos(index, 3));
         M(1,1) = alpha;
         M(2,2) = alpha;
-    %     psi = 0.5;
-    %     M(1:2, 3) = psi * M(1:2, 3) + (1-psi) * pos(1:2);
     end
         
     % If we have moved past a threshold re-initialize the template.
@@ -192,19 +193,10 @@ for i = start:start+n-1
     
     %%%%%%%%%%%%%%%%%%%%%
     % Updating the lines.
-    %%%%%%%%%%%%%%%%%%%%%
-    % If the lines are real, incorporate the LKT information into the
-    % state.
-    phi = 1;
-    if line_data.real
-        phi = 0.9;
-    end
-%     line_data.state(1:2) = phi*line_data.state(1:2) + ...
-%         (1-phi)*(camera_f*1/pixel_scale_factor*(pos(1:2) - initial_pos.pos')+initial_pos.xy);
-        
+    %%%%%%%%%%%%%%%%%%%%%        
     % If we have lost the line, make sure we update the initial pos the
     % next time we find a line.
-    if ~line_data.real
+    if line_data.skip > num_skips
         initial_pos.needs_update = true;
     end
 end
