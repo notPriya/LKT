@@ -52,6 +52,9 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % update to our measurement in the next step.
         if ~isempty(measurement)
             state_prior(1:3) = measurement;
+%             if max_num_skips >= 2
+%                 state_prior(4:6) = 0;
+%             end
         end
         found_line = ~isempty(measurement);
     end
