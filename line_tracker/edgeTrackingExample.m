@@ -28,10 +28,10 @@ line_data.skip = Inf;
 
 % Initialize the weights.
 weights = [0; 3; 1];
-num_skips = 1;
+num_skips = 2;
 
 % Scale factor to go from pixels to real world units.
-scale_factor = -5;
+scale_factor = -0.1278;
 camera_f = 510;
 
 % Initialize the position of the line.
@@ -46,8 +46,16 @@ pos = zeros(n, 3);
 for i=start:start+n
     index = i-start + 1;
     
+    if mod(index, 50) == 0
+        disp(index);
+        if ~evaluation
+            close;
+        end
+    end
+    
     % Get the preprocessed image.
     I = preprocessImage(frames(:,:,:,i), true, false);
+    I = rot90(I, -1);
     [line_data] = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
     % Update the initial position of the line if we are tracking a new
@@ -71,7 +79,7 @@ for i=start:start+n
     theta = pos(initial_pos.index, 3);
     phi = atan2d(delta_pos(1), delta_pos(2)) + 90;
     r = norm(delta_pos, 2);
-    
+
     pos(index, :) = [pos(initial_pos.index, 1) - r * cosd(phi - theta) ...
                      pos(initial_pos.index, 2) + r * sind(phi - theta) ...
                      sign(line_data.state(3))*90 - line_data.state(3)];
