@@ -15,8 +15,8 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
          0 0 0 0 0 1];
     
     % Uncertainty of the measurement (line prediction).
-    R = [5 0 0;
-         0 5 0;
+    R = [10 0 0;
+         0 10 0;
          0 0 5];
      
     % Measurement rejection Threshold

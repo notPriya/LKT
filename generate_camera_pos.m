@@ -75,6 +75,104 @@ camera_pos(900:end, 3) = 0;
 camera_pos(900:end, 1) = linspace(-0.1016, -0.1016, 216);
 camera_pos(900:end, 2) = linspace(0.6350, .7366, 216);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Pattern 1.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+camera_pos = zeros(n, 3);
+p =  [-.1016; .1524; 1];
+
+%%
+
+camera_pos(1:5, 3) = 0;
+camera_pos(1:5, 1:2) = 0;
+
+%%
+
+camera_pos(6:264, 3) = 0;
+camera_pos(6:264, 1) = linspace(0, 0, 259);
+camera_pos(6:264, 2) = linspace(0, .3048, 259);
+
+%%
     
-    
-    
+th = linspace(0, -45, 141);
+camera_pos(265:405, 3) = th;
+
+for i=1:141
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.3048; 0];
+    p2 = p2 - p;
+    camera_pos(264+i, 1:2) = p2(1:2);
+end
+
+%%
+
+th = linspace(-45, 45, 308);
+camera_pos(406:713, 3) = th;
+
+for i=1:308
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.3048; 0];
+    p2 = p2 - p;
+    camera_pos(405+i, 1:2) = p2(1:2);
+end
+
+%% 
+
+th = linspace(45, 0, 151);
+camera_pos(714:864, 3) = th;
+
+for i=1:151
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.3048; 0];
+    p2 = p2 - p;
+    camera_pos(713+i, 1:2) = p2(1:2);
+end
+
+%% 
+
+camera_pos(865:1088, 3) = 0;
+camera_pos(865:1088, 1) = linspace(0, 0, 224);
+camera_pos(865:1088, 2) = linspace(.3048, 0.6223, 224);
+
+%%
+
+th = linspace(0, -45, 114);
+camera_pos(1089:1202, 3) = th;
+
+for i=1:114
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.6223; 0];
+    p2 = p2 - p;
+    camera_pos(1088+i, 1:2) = p2(1:2);
+end
+
+%%
+
+th = linspace(-45, 45, 164);
+camera_pos(1203:1366, 3) = th;
+
+for i=1:164
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.6223; 0];
+    p2 = p2 - p;
+    camera_pos(1202+i, 1:2) = p2(1:2);
+end
+
+%% 
+
+th = linspace(45, 0, 98);
+camera_pos(1367:1464, 3) = th;
+
+for i=1:98
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [0; 0.6223; 0];
+    p2 = p2 - p;
+    camera_pos(1366+i, 1:2) = p2(1:2);
+end
+
+
+%%
+
+camera_pos(1464:end, 3) = 0;
+camera_pos(1464:end, 1) = 0;
+camera_pos(1464:end, 2) = 0.6223;

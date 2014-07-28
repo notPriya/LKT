@@ -28,39 +28,43 @@ load([pipe_name '_lkt_results.mat']);
 
 % Find nearest neighbor in groundtruth path.
 lkt_dist = abs(scale_factor/camera_f*pos(:, 1:2) - groundtruth);
-lkt_dist_th = pos(:, 4) - groundtruth_angle;
+lkt_dist_th = abs(pos(:, 4) - groundtruth_angle);
 
 % Get the LKT and tracker results.
 load([pipe_name '_comb_results.mat']);
 
 % Find nearest neighbor in groundtruth path.
 comb_dist = abs(scale_factor/camera_f*pos(:, 1:2) - groundtruth);
-comb_dist_th = pos(:, 4) + groundtruth_angle;
+comb_dist_th = abs(pos(:, 4) + groundtruth_angle);
 
 % Plot the xy results.
 % Setup the figure.
 figure;
 hold on;
 
-% Plot the main results.
-plot(lkt_dist(:, 1), 'b', 'LineWidth', 2);
-plot(lkt_dist(:, 2), 'b--', 'LineWidth', 2);
-plot(comb_dist(:, 1), 'g', 'LineWidth', 2);
-plot(comb_dist(:, 2), 'g--', 'LineWidth', 2);
+% % Plot the main results.
+% plot(lkt_dist(:, 1), 'b', 'LineWidth', 2);
+% plot(lkt_dist(:, 2), 'b--', 'LineWidth', 2);
+% plot(comb_dist(:, 1), 'g', 'LineWidth', 2);
+% plot(comb_dist(:, 2), 'g--', 'LineWidth', 2);
+plot(sqrt(sum(lkt_dist.^2, 2)), 'b', 'LineWidth', 2);
+plot(sqrt(sum(comb_dist.^2, 2)), 'g', 'LineWidth', 2);
 
 % Do some axis stuff.
 limits = axis;
 
 % Plot the marker position if this is real data.
 if ~strncmp(pipe_name, 'crawlerTop', 10)
-    marker_dist = sqrt(sum((marker_pos(2:end, 1:2) - groundtruth).^2, 2));
-    plot(marker_dist, 'r', 'LineWidth', 2);
+    marker_dist = abs(marker_pos(2:end, 1:2) - groundtruth);
+%     plot(marker_dist(:, 1), 'r', 'LineWidth', 2);
+%     plot(marker_dist(:, 2), 'r--', 'LineWidth', 2);
+    plot(sqrt(sum(marker_dist.^2, 2)), 'r', 'LineWidth', 2);
 end
 
 % Add title, axis labels, and stuff.
-title('Evaluation of LKT and Tracking Results');
-xlabel('X Position (m)');
-ylabel('Y Position (m)');
+title('Error in Position estimation of LKT and Tracking');
+xlabel('Frame Number');
+ylabel('Error in Position (m)');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
 
 % Set the axis limits.
@@ -73,5 +77,17 @@ hold on;
 
 % Plot the main results.
 plot(lkt_dist_th, 'b', 'LineWidth', 2);
-plot(-comb_dist_th, 'g', 'LineWidth', 2);
+plot(comb_dist_th, 'g', 'LineWidth', 2);
+
+% Plot the marker orientation if this is real data.
+if ~strncmp(pipe_name, 'crawlerTop', 10)
+%     marker_dist_th = abs(data.marker_orient(2:end, 4) - groundtruth_angle);
+%     plot(marker_dist_th, 'r', 'LineWidth', 2);
+end
+
+% Add title, axis labels, and stuff.
+title('Error in Orientation estimation of LKT and Tracking');
+xlabel('Frame Number');
+ylabel('Error in Orientation (degrees)');
+legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
 
