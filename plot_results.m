@@ -1,5 +1,5 @@
 % Which results to plot.
-pipe_name = 'crawler2';
+pipe_name = 'pattern_1';
 
 % Get the correct scale factor.
 if strncmp(pipe_name, 'crawlerTop', 10)

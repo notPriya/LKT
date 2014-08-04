@@ -29,7 +29,8 @@ evaluation = true;
 
 % Scale factor for the crawler. Goes between vision units and real world
 % units.
-scale_factor =  -5;  % MAGIC
+scale_factor =  -0.1278;  % MAGIC
+% scale_factor = -5;
 % Constants based on pipe video.
 camera_f = 510;  % MAGIC
 
@@ -39,7 +40,7 @@ camera_f = 510;  % MAGIC
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 templateData = [];
-distance_threshold = 10;
+distance_threshold = 20;
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
@@ -51,7 +52,7 @@ warp = getRigidBodyWarp();
 
 % Weights on the features for picking best measurement.
 weights = [0; 3; 1];
-num_skips = 1;
+num_skips = 3;
 
 % Initialize the first line to track.
 line_data.state = zeros(6, 1);
@@ -107,7 +108,9 @@ for i = start:start+n-1
     % Line Tracking
     %%%%%%%%%%%%%%%%%%%%%
     % Get the preprocessed image.
-    I = preprocessImage(frames(:,:,:,i), true, false);
+    I = preprocessImage(frames(:,:,:,i), true, false, [20 10]);
+    % HACKKK FOR REAL VIDEOS.
+    I = rot90(I, -1);
     line_data = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
     t = toc;
@@ -121,14 +124,16 @@ for i = start:start+n-1
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f; M(1, 2)/alpha*(180/pi)] + ...
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f; -M(1, 2)/alpha*(180/pi)] + ...
                TrackedObject.template_pos(index, :)';
     
     % Update the initial position of the line if we are tracking a new
     % line.
     if line_data.real && initial_pos.needs_update
         initial_pos.xy = line_data.state(1:2);
-        initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), :);
+        meow = TrackedObject.pos(max(1, index-1), :);
+%         initial_pos.pos = TrackedObject.jt_pos(max(1, index-1), :);
+        initial_pos.pos = [meow(2) meow(1) meow(3:end)];
         initial_pos.needs_update = false;
         line_data.skip = 0;
     end
@@ -143,14 +148,26 @@ for i = start:start+n-1
               initial_pos.pos(2) + r * sind(phi - theta); ...
               0; ...
               sign(line_data.state(3))*90 - line_data.state(3)];
+          
+%     temp_pos = jt_pos;
+%     gamma = [.9; 0.7; 1; 0.1];
+          
+    % HACKKK FOR REAL VIDEOS.
+    % Swap x and y since we rotated the image.
+    temp_pos = [jt_pos(2); jt_pos(1); jt_pos(3:end)];
     
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
-    gamma = [0.9; 0.7; 1; 0.1]; % Mixing factor.
+    % HACKKK FOR REAL VIDEOS.
+    gamma = [0.7; 1; 1; .5]; % Mixing factor.
+    % HACKKK FOR BAD DATA.
+    if abs(lkt_pos(4) - temp_pos(4)) >= 10
+        gamma(4) = 1;
+    end
     
     % Combine the LKT position estimate and the joint tracking position
     % estimate.
-    pos = gamma .* lkt_pos + (1-gamma) .* jt_pos;
+    pos = gamma .* lkt_pos + (1-gamma) .* temp_pos;
         
     %%%%%%%%%%%%%%%%%%%%%
     % Save Results.
@@ -231,7 +248,7 @@ if visualize
         
         % Draw the lines.
         subplot(2, 2, 2);
-        imshow(uint8(I));
+        imshow(uint8(I'));
         hold on;
         line = TrackedObject.lines{i-start+1};
         vislines(line);
@@ -239,6 +256,10 @@ if visualize
         % Show deviations from the original template.
         subplot(2, 2, 3);
         imagesc(abs(T - template));
+        
+        % Show the plots for error.
+        subplot(2, 2, 4);
+        plot(TrackedObject.error{i});
 
         pause(0.3);
     end
@@ -247,15 +268,21 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the robot motion  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure;
+handle = figure;
 hold on;
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos(:, 1:3), '--', 'LineWidth', 2);
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-.');
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '*');
 
-plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
-plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
-plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
+plot(scale_factor*1./camera_f*TrackedObject.pos(:, 1), scale_factor*1./camera_f*TrackedObject.pos(:, 2), '--', 'LineWidth', 2);
+plot(scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1), scale_factor*1./camera_f*TrackedObject.jt_pos(:, 2), 'g--', 'LineWidth', 2);
+plot(scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1), scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 2), 'r--', 'LineWidth', 2);
+% plot(camera_pos(:, 2), camera_pos(:, 1), 'k', 'LineWidth', 2);
+
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos(:, 1:3), '--', 'LineWidth', 2);
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.jt_pos(:, 1:3), '-');
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.lkt_pos(:, 1:3), '.');
+% 
+% plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
 
 %%
 figure;
@@ -264,12 +291,12 @@ plot(start:start+n-1, -TrackedObject.pos(:, 4), '--', 'LineWidth', 2);
 plot(start:start+n-1, -TrackedObject.jt_pos(:, 4), '-.');
 plot(start:start+n-1, -TrackedObject.lkt_pos(:, 4), '*');
 
-plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 5) - pose(1, 5), 'b', 'LineWidth', 2);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
-% saveas(gcf, figure_filename , 'png');
+saveas(handle, figure_filename , 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the z-axis motion %
@@ -287,7 +314,7 @@ message_format = ['Video:\t\t\t%s\n' ...
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
 
 
-% emailResults(message, figure_filename);
+emailResults(message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %

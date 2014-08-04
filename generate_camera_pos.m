@@ -83,14 +83,14 @@ p =  [-.1016; .1524; 1];
 
 %%
 
-camera_pos(1:5, 3) = 0;
-camera_pos(1:5, 1:2) = 0;
+camera_pos(1:103, 3) = 0;
+camera_pos(1:103, 1:2) = 0;
 
 %%
 
-camera_pos(6:264, 3) = 0;
-camera_pos(6:264, 1) = linspace(0, 0, 259);
-camera_pos(6:264, 2) = linspace(0, .3048, 259);
+camera_pos(104:182, 3) = 0;
+camera_pos(104:182, 1) = linspace(0, 0, 79);
+camera_pos(104:182, 2) = linspace(0, 0.3556, 79);
 
 %%
     

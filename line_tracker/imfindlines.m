@@ -1,7 +1,13 @@
 % Uses a Hough transform to find lines in the image.
-function lines = imfindlines(I)    
+function lines = imfindlines(I, edge_detector)    
+    % If the edge detection algorithm is not passed in, default to canny
+    % edge detection.
+    if nargin < 2
+        edge_detector = 'canny';
+    end
+    
     % Find the edges in the image using the Canny detector.
-    BW = edge(I, 'canny');
+    BW = edge(I, edge_detector);
 
     % Compute the Hough transform of the image.
     [H,theta,rho] = hough(BW);
@@ -13,11 +19,16 @@ function lines = imfindlines(I)
     lines = houghlines(BW,theta,rho,P,'FillGap',40,'MinLength', 300);
 
 %     %% Plotting code for reference.
+%     I(BW) = 0;
 %     imshow(uint8(I));
 %     hold on;
 %     for k=1:size(lines,2)
 %         xy = [lines(k).point1; lines(k).point2];
-%         plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
+%         if k==1
+%             plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','blue');
+%         else
+%             plot(xy(:,1),xy(:,2),'LineWidth',2,'Color','green');
+%         end
 % 
 %         % Plot beginnings and ends of lines
 %         plot(xy(1,1),xy(1,2),'x','LineWidth',2,'Color','yellow');

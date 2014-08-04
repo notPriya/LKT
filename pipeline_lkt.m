@@ -24,7 +24,7 @@ n = size(frames, 4) - start;
 visualize = false;
 
 % Scale factor for the crawler.
-scale_factor =  -5;
+scale_factor =  -0.1278;
 % Focal length of the camera.
 camera_f = 510;
 
@@ -34,7 +34,7 @@ camera_f = 510;
 % The initial assumption is that we havent transformed.
 M = eye(3,3);
 templateData = [];
-distance_threshold = 10;
+distance_threshold = 20;
 
 % Set the kind of warp we are using.
 warp = getRigidBodyWarp();
@@ -43,14 +43,14 @@ warp = getRigidBodyWarp();
 % Initialize the result struct %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a structure for saving the results.
-TrackedObject.pos = zeros(n, 3);
+TrackedObject.pos = zeros(n, 4);
 % Time results.
 TrackedObject.time = zeros(n, 1);
 % LKT Results
 TrackedObject.M = zeros(3, 3, n);
 TrackedObject.error = cell(n, 1);
 TrackedObject.template = cell(n, 1);
-TrackedObject.template_pos = zeros(n+1, 3);
+TrackedObject.template_pos = zeros(n+1, 4);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -79,12 +79,13 @@ for i = start:start+n-1
         disp(i);
     end
     
+    
     %%%%%%%%%%%%%%%%%%%%%
     % Distance Estimation
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
     alpha = M(1, 1);
-    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f] + ...
+    pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f; M(1, 2)/alpha*(180/pi)] + ...
            TrackedObject.template_pos(index, :)';
             
     %%%%%%%%%%%%%%%%%%%%%
@@ -152,16 +153,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 hold on;
-plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos, '--', 'LineWidth', 2);
+% plot(start:start+n-1, scale_factor*1./camera_f*TrackedObject.pos, '--', 'LineWidth', 2);
+plot(scale_factor*1./camera_f*TrackedObject.pos(:, 1), scale_factor*1./camera_f*TrackedObject.pos(:, 2), '--', 'LineWidth', 2);
+% plot(camera_pos(:, 2), camera_pos(:, 1), 'k', 'LineWidth', 2);
 
-plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
-plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
-plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 2) - pose(1, 2), 'r', 'LineWidth', 2);
 
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
-% saveas(gcf, figure_filename , 'png');
+saveas(gcf, figure_filename , 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Visualize the z-axis motion %
@@ -179,7 +182,7 @@ message_format = ['Video:\t\t\t%s\n' ...
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
 
 
-% emailResults(message, figure_filename);
+emailResults(message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %

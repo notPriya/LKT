@@ -28,7 +28,7 @@ line_data.skip = Inf;
 
 % Initialize the weights.
 weights = [0; 3; 1];
-num_skips = 2;
+num_skips = 3;
 
 % Scale factor to go from pixels to real world units.
 scale_factor = -0.1278;
@@ -54,7 +54,7 @@ for i=start:start+n
     end
     
     % Get the preprocessed image.
-    I = preprocessImage(frames(:,:,:,i), true, false);
+    I = preprocessImage(frames(:,:,:,i), true, false, [20 10]);
     I = rot90(I, -1);
     [line_data] = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
@@ -89,13 +89,16 @@ end
 %% Visualize the results
 figure;
 hold on;
-plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
+% plot(start:start+n, scale_factor*1/camera_f*pos(:, 1:2), '--');
+plot(scale_factor*1/camera_f*pos(:, 1), scale_factor*1/camera_f*pos(:, 2), 'b', 'LineWidth', 2);
+plot(camera_pos(:, 1), camera_pos(:, 2));
+plot(camera_pos(:, 1), scale_factor*1/camera_f*pos(2:end, 2), 'g', 'LineWidth', 2);
 
-plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
-plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 3) - pose(1, 3), 'b', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 1) - pose(1, 1), 'g', 'LineWidth', 2);
 
 %%
 figure;
 plot(start:start+n, -pos(:, 3), '--', 'LineWidth', 2);
 hold on;
-plot(start:start+n, pose(:, 5) - pose(1, 5), 'k', 'LineWidth', 2);
+% plot(start:start+n, pose(:, 5) - pose(1, 5), 'k', 'LineWidth', 2);
