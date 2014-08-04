@@ -37,6 +37,7 @@ warp = getRigidBodyWarp();
 
 % Get the odometry bounding box.
 if ~exist('odom_rect', 'var')
+    disp('Outline the odometry bounding box');
     imshow(frames(:,:,:,5));
     [x, y] = ginput(2);
     odom_rect = [min(size(frames, 2)-2*border_size, max(1, x'-border_size)) ...
@@ -50,7 +51,7 @@ end
 % tracking variables           %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Constants based on pipe video.
-pipe_radius = 4;
+pipe_radius = 3;
 camera_f = 510;  % MAGIC
 
 % Weights on the features for picking best measurement.
@@ -61,6 +62,7 @@ small_radius_guess = 55;  % MAGIC.
 small_delta_radius_guess = .3; % MAGIC.
 
 if ~exist('init_state', 'var')
+    disp('Outline the initial circle state.');
     % Get the initialization of the first circle.
     I = frames(:, :, :, start+1);
     imshow(I);

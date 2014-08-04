@@ -71,13 +71,13 @@ function [new_circle, weighted_norm, features] = pipeJointTracker(I, weights, pr
             found_circle = previous_circle.real;
         end
         
-        % Make sure the center is in the image.
-        if ~isempty(measurement) && ...
-           ~(measurement(1) > 0 && measurement(1) < size(I, 2) && ...
-             measurement(2) > 0 && measurement(2) < size(I, 1))
-            measurement = [];
-            found_circle = previous_circle.real;            
-        end
+%         % Make sure the center is in the image.
+%         if ~isempty(measurement) && ...
+%            ~(measurement(1) > 0 && measurement(1) < size(I, 2) && ...
+%              measurement(2) > 0 && measurement(2) < size(I, 1))
+%             measurement = [];
+%             found_circle = previous_circle.real;            
+%         end
     end
     
     

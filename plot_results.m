@@ -1,4 +1,4 @@
-pipe_name = 'trial9';
+pipe_name = 'trial8';
 n=1281;
 
 % Create the first figure.
@@ -20,7 +20,8 @@ load([pipe_name '_comb_results.mat']);
 plot(pos(:, 3)*0.3048*0.22, 'g', 'LineWidth', 2);
 
 if ~exist('pos2', 'var')
-    load(['../matlabSnakeControl/vc_' pipe_name '_data2.mat']);
+%     load(['../matlabSnakeControl/vc_' pipe_name '_data2.mat']);
+    load(['vc_' pipe_name '_data2.mat']);
 
     % Get the State Estimation Motion data.
     T = eye(4);
