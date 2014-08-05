@@ -101,6 +101,7 @@ TrackedObject.template_pos = zeros(n+1, 3);
 % Joint Tracking Results.
 TrackedObject.circles = cell(n, 1);
 
+reinitialize_template = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% For each image run the LKT  %
@@ -121,6 +122,7 @@ for i = start:start+n-1
     % If we got some bad data, get rid of it.
     if abs((1 - M(1,1))*510*(1/250)) > 1.5 * distance_threshold
         M = TrackedObject.M(:, :, index-1);  % Use the old M.
+        reinitialize_template = true;
     end
             
     %%%%%%%%%%%%%%%%%%%%%
@@ -214,12 +216,13 @@ for i = start:start+n-1
         M(2,2) = alpha;
     end
     % If we have moved past a threshold re-initialize the template.
-    if abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
+    if reinitialize_template || abs(TrackedObject.pos(index, 3)-TrackedObject.template_pos(index, 3)) > distance_threshold
         % Clear the template and M.
         templateData = [];
         M = eye(3);
         % Update the template's position.
         TrackedObject.template_pos(index+1, :) = pos;
+        reinitialize_template = false;
     end
     
     
@@ -233,7 +236,7 @@ for i = start:start+n-1
         phi = 0.7;
     end
 %     circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
-    circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
+%     circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     
     % If we are tracking too big a circle reinitialize it.
     % Or if the circle goes off the screen reinitialize it.
@@ -308,7 +311,7 @@ if visualize
         subplot(2, 2, 3);
         imagesc(abs(T - template));
 
-        pause(0.3);
+        pause(0.1);
     end
 end
 
