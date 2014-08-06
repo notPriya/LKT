@@ -1,9 +1,13 @@
 % Which results to plot.
-pipe_name = 'pattern_2';
+pipe_name = 'pattern_1';
 
 % Get the correct scale factor.
 if strncmp(pipe_name, 'crawlerTop', 10)
     scale_factor = -5;
+elseif strcmp(pipe_name, 'pattern_1')
+    scale_factor = -0.1546;
+elseif strcmp(pipe_name, 'pattern_2')
+    scale_factor = -0.1590;
 else 
     scale_factor = -0.1278;
 end
@@ -40,6 +44,7 @@ if ~strncmp(pipe_name, 'crawlerTop', 10)
     if ~exist('data', 'var')
         load([pipe_name '.mat']);
     end
+    
     plot(data.marker_pos(:, 1)-data.marker_pos(1, 1), -data.marker_pos(:, 2)+data.marker_pos(1, 2), 'r', 'LineWidth', 2);
 end
 
@@ -53,6 +58,10 @@ legend('Expected Motion', 'LKT', 'LKT with Tracking', 'AR Tag Estimate');
 % Setup the figure.
 figure;
 hold on;
+
+if size(camera_pos, 2) > 2
+    plot(-camera_pos(:, 3), 'k--', 'LineWidth', 2);
+end
 
 % Get the LKT results.
 load([pipe_name '_lkt_results.mat']);
@@ -71,5 +80,5 @@ end
 title('Orientation estimation of LKT and Tracking');
 xlabel('Time (frames)');
 ylabel('Estimated Orientation (degrees)');
-legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
+legend('Expected Motion', 'LKT', 'LKT with Tracking', 'AR Tag Estimate');
 

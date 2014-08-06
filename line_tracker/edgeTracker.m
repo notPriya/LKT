@@ -156,7 +156,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % Some small number.
         epsilon = 0.0001;
         % Approximate maximum that the distance measures can be.
-        distance_max = 7000;
+        distance_max = 300;
         
         %%%%%
         % Feature Computation
@@ -167,17 +167,25 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % Compute change in angle.
         angle_delta = mod(new_lines(:, 3) - predicted_line(3), 360);
         angle_delta(angle_delta > 180) = 360 - angle_delta(angle_delta > 180);
-        angle_score = (180 - angle_delta)./angle_delta;
+        angle_score = (180 - angle_delta)./180;
         
         % Compute the features for difference to predicted line.
-        % This one does difference from the center of the predicted line.
-        center_diff = (new_lines(:, 1) - predicted_line(1)).^2 + (new_lines(:,2) - predicted_line(2)).^2;
-        center_diff = (distance_max - center_diff)./distance_max;
+        % This one does difference from the center of the predicted line in
+        % the x direction.
+        x_diff = abs(new_lines(:, 1) - predicted_line(1));
+        x_diff = (distance_max - x_diff)./distance_max;
         % If the we are further than the approximate max, give a low score.
-        center_diff(center_diff <= 0) = epsilon;
+        x_diff(x_diff <= 0) = epsilon;
+                
+        % This one does difference from the center of the predicted line in
+        % the y direction.
+        y_diff = abs(new_lines(:, 2) - predicted_line(2));
+        y_diff = (distance_max - y_diff)./distance_max;
+        % If the we are further than the approximate max, give a low score.
+        y_diff(y_diff <= 0) = epsilon;
                 
         % Compute the features.
-        f = [new_lines(:, 4) angle_score center_diff];
+        f = [angle_score x_diff y_diff];
         f = log(f);  % Compute the negative log of scores.
     end
 
@@ -210,7 +218,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
                 features = features(ind, :);
                 lines = lines(ind);
             end
-
+            
             % The measurement is the best line.
             measurement = [new_lines(1, 1:3)]';
             line = lines(1);

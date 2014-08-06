@@ -51,7 +51,7 @@ warp = getRigidBodyWarp();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Weights on the features for picking best measurement.
-weights = [0; 3; 1];
+weights = [3; 1; 0];
 num_skips = 3;
 
 % Initialize the first line to track.
@@ -108,7 +108,7 @@ for i = start:start+n-1
     % Line Tracking
     %%%%%%%%%%%%%%%%%%%%%
     % Get the preprocessed image.
-    I = preprocessImage(frames(:,:,:,i), true, false, [20 10]);
+    I = preprocessImage(frames(:,:,:,i), true, false, [5 2]);
     % HACKKK FOR REAL VIDEOS.
     I = rot90(I, -1);
     line_data = edgeTracker(I, weights, num_skips, line_data, evaluation);

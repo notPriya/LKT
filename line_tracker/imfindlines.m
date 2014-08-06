@@ -3,7 +3,7 @@ function lines = imfindlines(I, edge_detector)
     % If the edge detection algorithm is not passed in, default to canny
     % edge detection.
     if nargin < 2
-        edge_detector = 'canny';
+        edge_detector = 'sobel';
     end
     
     % Find the edges in the image using the Canny detector.

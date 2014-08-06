@@ -1,79 +1,115 @@
-camera_pos = zeros(n, 3);
-p =  [-.1016; .1524; 1];
+camera_pos = [];
+p =  [6.5; 4; 1];
 
 %%
-camera_pos(1:44, 3) = 0;
-camera_pos(1:44, 1:2) = 0;
+camera_pos(1:51, 3) = 0;
+camera_pos(1:51, 1:2) = 0;
 
 %%
-th = linspace(0, -45, 56);
-camera_pos(45:100, 3) = th;
+th = linspace(0, -25, 90);
+camera_pos(51:140, 3) = th;
 
-for i=1:56
+for i=1:90
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
     p2 = R * p + [0; 0; 0];
     p2 = p2 - p;
-    camera_pos(44+i, 1:2) = p2(1:2);
+    camera_pos(50+i, 1:2) = p2(1:2);
 end
 
 %%
-camera_pos(100:313, 3) = -45;
-camera_pos(100:313, 1) = linspace(.1375, .3788, 214);
-camera_pos(100:313, 2) = linspace(.02721, .2431, 214);
+camera_pos(140:227, 3) = -25;
+camera_pos(140:227, 1) = 1.0815 + linspace(0, 4.5, 88);
+camera_pos(140:227, 2) = -3.1218 + linspace(0, -2.5, 88);
 
 %%
 
-th = linspace(-45, 0, 150);
-camera_pos(314:463, 3) = th;
+th = linspace(-25, 0, 47);
+camera_pos(227:273, 3) = th;
 
-for i=1:150
+for i=1:47
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0.2413; 0.2159; 0];
+    p2 = R * p + [4.5; -2.5; 0];
     p2 = p2 - p;
-    camera_pos(313+i, 1:2) = p2(1:2);
-end
-
-%%
-
-camera_pos(464:545, 3) = 0;
-camera_pos(464:545, 1) = linspace(0.2413, 0.2413, 82);
-camera_pos(464:545, 2) = linspace(0.2159, 0.3175, 82);
-
-%%
-
-th = linspace(0, 45, 107);
-camera_pos(546:652, 3) = th;
-
-for i=1:107
-    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0.2413; 0.3175; 0];
-    p2 = p2 - p;
-    camera_pos(545+i, 1:2) = p2(1:2);
+    camera_pos(226+i, 1:2) = p2(1:2);
 end
 
 %%
 
-camera_pos(653:831, 3) = 45;
-camera_pos(653:831, 1) = linspace(0.1633, -.1796, 179);
-camera_pos(653:831, 2) = linspace(0.2010, .5185, 179);
+camera_pos(273:355, 3) = 0;
+camera_pos(273:355, 1) = 4.5 + linspace(0, 4.5, 83);
+camera_pos(273:355, 2) = -2.5 + linspace(0, 0, 83);
 
 %%
 
-th = linspace(45, 0, 68);
-camera_pos(832:899, 3) = th;
+th = linspace(0, 25, 71);
+camera_pos(355:425, 3) = th;
 
-for i=1:68
+for i=1:71
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [-0.1016; 0.635; 0];
+    p2 = R * p + [9; -2.5; 0];
     p2 = p2 - p;
-    camera_pos(831+i, 1:2) = p2(1:2);
+    camera_pos(354+i, 1:2) = p2(1:2);
+end
+
+%%
+
+camera_pos(425:672, 3) = 25;
+camera_pos(425:672, 1) = 6.7005 + linspace(0, 10, 248);
+camera_pos(425:672, 2) = -0.1278 + linspace(0, 5.5, 248);
+
+%%
+
+th = linspace(25, 0, 53);
+camera_pos(672:724, 3) = th;
+
+for i=1:53
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [19; 3; 0];
+    p2 = p2 - p;
+    camera_pos(671+i, 1:2) = p2(1:2);
 end
     
 %%
 
-camera_pos(900:end, 3) = 0;
-camera_pos(900:end, 1) = linspace(-0.1016, -0.1016, 216);
-camera_pos(900:end, 2) = linspace(0.6350, .7366, 216);
+camera_pos(724:899, 3) = 0;
+camera_pos(724:899, 1) = 19 + linspace(0, 5.5, 176);
+camera_pos(724:899, 2) = 3 + linspace(0, 0, 176);
+
+%%
+
+th = linspace(0, -25, 31);
+camera_pos(899:929, 3) = th;
+
+for i=1:31
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [24.5; 3; 0];
+    p2 = p2 - p;
+    camera_pos(898+i, 1:2) = p2(1:2);
+end
+    
+%%
+
+camera_pos(929:1036, 3) = -25;
+camera_pos(929:1036, 1) = 25.5815 + linspace(0, 5, 108);
+camera_pos(929:1036, 2) = -0.1218 + linspace(0, -3, 108);
+
+%%
+
+th = linspace(-25, 0, 76);
+camera_pos(1036:1111, 3) = th;
+
+for i=1:76
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [29.5; 0; 0];
+    p2 = p2 - p;
+    camera_pos(1035+i, 1:2) = p2(1:2);
+end
+    
+%%
+
+camera_pos(1111:1176, 3) = 0;
+camera_pos(1111:1176, 1) = 29.5;
+camera_pos(1111:1176, 2) = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Pattern 1.
