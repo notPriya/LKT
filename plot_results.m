@@ -48,16 +48,15 @@ subplot(2, 1, 1);
 hold on;
 
 % % Plot the main results.
-plot(lkt_dist(:, 1), 'b', 'LineWidth', 2);
-plot(comb_dist(:, 1), 'g', 'LineWidth', 2);
-plot(comb_dist(:, 2), 'g-.', 'LineWidth', 2);
-plot(lkt_dist(:, 2), 'b-.', 'LineWidth', 2);
+% plot(lkt_dist(:, 1), 'b', 'LineWidth', 2);
+% plot(comb_dist(:, 1), 'g', 'LineWidth', 2);
+% plot(lkt_dist(:, 2), 'b-.', 'LineWidth', 2);
+% plot(comb_dist(:, 2), 'g-.', 'LineWidth', 2);
 % figure; hold on;
 % plot(pi/180*comb_dist_th, 'g--', 'LineWidth', 2);
 % plot(pi/180*lkt_dist_th, 'b--', 'LineWidth', 2);
-% plot(sqrt(sum(lkt_dist.^2, 2)), 'b', 'LineWidth', 2);
-% plot(sqrt(sum(comb_dist.^2, 2)), 'g', 'LineWidth', 2);
-
+plot(sqrt(sum(lkt_dist.^2, 2)), 'b', 'LineWidth', 2);
+plot(sqrt(sum(comb_dist.^2, 2)), 'g', 'LineWidth', 2);
 
 % Plot the marker position if this is real data.
 if ~strncmp(pipe_name, 'crawlerTop', 10)
@@ -95,3 +94,4 @@ xlabel('Frame Number');
 ylabel('Error in Orientation (degrees)');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
 
+results = [mean(sum(lkt_dist.^2, 2)) std(sum(lkt_dist.^2, 2)) mean(lkt_dist_th) std(lkt_dist_th); mean(sum(comb_dist.^2, 2)) std(sum(comb_dist.^2, 2)) mean(comb_dist_th) std(comb_dist_th)];

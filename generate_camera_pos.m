@@ -1,3 +1,7 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Pattern 2.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 camera_pos = [];
 p =  [6.5; 4; 1];
 
@@ -114,8 +118,8 @@ camera_pos(1111:1176, 2) = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Pattern 1.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-camera_pos = zeros(n, 3);
-p =  [-.1016; .1524; 1];
+camera_pos = [];
+p =  [6.5; 4; 1];
 
 %%
 
@@ -124,91 +128,105 @@ camera_pos(1:103, 1:2) = 0;
 
 %%
 
-camera_pos(104:182, 3) = 0;
-camera_pos(104:182, 1) = linspace(0, 0, 79);
-camera_pos(104:182, 2) = linspace(0, 0.3556, 79);
+camera_pos(103:203, 3) = 0;
+camera_pos(103:203, 1) = linspace(0, 14, 101);
+camera_pos(103:203, 2) = linspace(0, 0, 101);
 
 %%
     
-th = linspace(0, -45, 141);
-camera_pos(265:405, 3) = th;
+th = linspace(0, -22, 37);
+camera_pos(203:239, 3) = th;
 
-for i=1:141
+for i=1:37
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.3048; 0];
+    p2 = R * p + [14; 0; 0];
     p2 = p2 - p;
-    camera_pos(264+i, 1:2) = p2(1:2);
+    camera_pos(202+i, 1:2) = p2(1:2);
 end
+
+camera_pos(240:250, 3) = -22;
+camera_pos(240:250, 1) = camera_pos(239, 1);
+camera_pos(240:250, 2) = camera_pos(239, 2);
+
 
 %%
 
-th = linspace(-45, 45, 308);
-camera_pos(406:713, 3) = th;
+th = linspace(-22, 22, 41);
+camera_pos(250:290, 3) = th;
 
-for i=1:308
+for i=1:41
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.3048; 0];
+    p2 = R * p + [14; 0; 0];
     p2 = p2 - p;
-    camera_pos(405+i, 1:2) = p2(1:2);
+    camera_pos(249+i, 1:2) = p2(1:2);
 end
 
 %% 
 
-th = linspace(45, 0, 151);
-camera_pos(714:864, 3) = th;
+th = linspace(22, 0, 17);
+camera_pos(290:306, 3) = th;
 
-for i=1:151
+for i=1:17
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.3048; 0];
+    p2 = R * p + [14; 0; 0];
     p2 = p2 - p;
-    camera_pos(713+i, 1:2) = p2(1:2);
+    camera_pos(289+i, 1:2) = p2(1:2);
+end
+
+camera_pos(307:316, 3) = 0;
+camera_pos(307:316, 1) = camera_pos(306, 1);
+camera_pos(307:316, 2) = camera_pos(306, 2);
+
+
+%% 
+
+camera_pos(316:416, 3) = 0;
+camera_pos(316:416, 1) = linspace(14, 29.5, 101);
+camera_pos(316:416, 2) = linspace(0, 0, 101);
+
+%%
+
+th = linspace(0, -22, 16);
+camera_pos(416:431, 3) = th;
+
+for i=1:16
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [29.5; 0; 0];
+    p2 = p2 - p;
+    camera_pos(415+i, 1:2) = p2(1:2);
+end
+
+camera_pos(432:440, 3) = -22;
+camera_pos(432:440, 1) = camera_pos(431, 1);
+camera_pos(432:440, 2) = camera_pos(431, 2);
+
+%%
+
+th = linspace(-22, 22, 45);
+camera_pos(440:484, 3) = th;
+
+for i=1:45
+    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
+    p2 = R * p + [29.5; 0; 0];
+    p2 = p2 - p;
+    camera_pos(439+i, 1:2) = p2(1:2);
 end
 
 %% 
 
-camera_pos(865:1088, 3) = 0;
-camera_pos(865:1088, 1) = linspace(0, 0, 224);
-camera_pos(865:1088, 2) = linspace(.3048, 0.6223, 224);
+th = linspace(22, 0, 27);
+camera_pos(485:511, 3) = th;
 
-%%
-
-th = linspace(0, -45, 114);
-camera_pos(1089:1202, 3) = th;
-
-for i=1:114
+for i=1:27
     R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.6223; 0];
+    p2 = R * p + [29.5; 0; 0];
     p2 = p2 - p;
-    camera_pos(1088+i, 1:2) = p2(1:2);
-end
-
-%%
-
-th = linspace(-45, 45, 164);
-camera_pos(1203:1366, 3) = th;
-
-for i=1:164
-    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.6223; 0];
-    p2 = p2 - p;
-    camera_pos(1202+i, 1:2) = p2(1:2);
-end
-
-%% 
-
-th = linspace(45, 0, 98);
-camera_pos(1367:1464, 3) = th;
-
-for i=1:98
-    R = [cosd(th(i)) -sind(th(i)) 0; sind(th(i)) cosd(th(i)) 0; 0 0 1];
-    p2 = R * p + [0; 0.6223; 0];
-    p2 = p2 - p;
-    camera_pos(1366+i, 1:2) = p2(1:2);
+    camera_pos(484+i, 1:2) = p2(1:2);
 end
 
 
 %%
 
-camera_pos(1464:end, 3) = 0;
-camera_pos(1464:end, 1) = 0;
-camera_pos(1464:end, 2) = 0.6223;
+camera_pos(511:665, 3) = 0;
+camera_pos(511:665, 1) = 29.5;
+camera_pos(511:665, 2) = 0;
