@@ -1,23 +1,23 @@
-pipe_name = 'trial8';
+pipe_name = 'trial8test';
 n=1281;
 
 % Create the first figure.
 figure;
 hold on;
 
-if strcmp(pipe_name, 'trial8')
+if strcmp(pipe_name, 'trial8') || strcmp(pipe_name, 'trial8test')
     ground_truth = [0 0; n 0.4445];
 else
-    ground_truth = [0 0; 245 0.17145; 450 0.17145; n 0.3175];
+    ground_truth = [0 0; 461 0.17145; 700 0.17145; n 0.3175];
 end
 
 % Plot the LKT Results.
 load([pipe_name '_lkt_result.mat']);
-plot(pos(:, 3)*0.3048*0.22, 'b', 'LineWidth', 2);
+plot(-pos(:, 3)*0.3048*0.16, 'b', 'LineWidth', 2);
 
 % Plot the LKT + Joint Tracking results.
 load([pipe_name '_comb_results.mat']);
-plot(pos(:, 3)*0.3048*0.22, 'g', 'LineWidth', 2);
+plot(pos(:, 3)*0.3048*0.16, 'g', 'LineWidth', 2);
 
 if ~exist('pos2', 'var')
 %     load(['../matlabSnakeControl/vc_' pipe_name '_data2.mat']);
@@ -42,5 +42,5 @@ plot(ground_truth(:, 1), ground_truth(:, 2), 'k--', 'LineWidth', 2);
 title('Visual Odometry for the Snake Robot in Pipes');
 xlabel('Frame Number');
 ylabel('Distance Traveled (m)');
-legend('LKT', 'LKT with Joint Tracking', 'State Estimation', 'Expected Motion')
+legend('LKT', 'LKT with Joint Tracking', 'Motion Model', 'Groundtruth')
 

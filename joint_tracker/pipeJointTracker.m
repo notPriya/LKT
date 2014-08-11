@@ -220,7 +220,9 @@ function [new_circle, weighted_norm, features] = pipeJointTracker(I, weights, pr
         if (center_range(1) < 40)
             center_range = [40 max(center_range(2), 45)];
         end
-        [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .05, 'Sensitivity', .995);
+        
+        I2 = preprocessImage(I, true, true);
+        [center, radius, metric] = imfindcircles(I2, center_range, 'EdgeThreshold', .05, 'Sensitivity', .985);
 
         measurement = [];
         features = [];
@@ -255,12 +257,13 @@ function [new_circle, weighted_norm, features] = pipeJointTracker(I, weights, pr
             center_range = [40 max(center_range(2), 45)];
         end
         % HACK: smaller circles have a stricter threshold.
+        I2 = preprocessImage(I, true, true);
         if state_prior(3) < 80
-            [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .1, 'Sensitivity', .98);
+            [center, radius, metric] = imfindcircles(I2, center_range, 'EdgeThreshold', .1, 'Sensitivity', .98);
         elseif state_prior(3) < 100
-            [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .1, 'Sensitivity', .99);
+            [center, radius, metric] = imfindcircles(I2, center_range, 'EdgeThreshold', .1, 'Sensitivity', .99);
         else
-            [center, radius, metric] = imfindcircles(I, center_range, 'EdgeThreshold', .05, 'Sensitivity', .99);
+            [center, radius, metric] = imfindcircles(I2, center_range, 'EdgeThreshold', .05, 'Sensitivity', .99);
         end
 
         measurement = [];

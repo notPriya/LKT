@@ -74,7 +74,7 @@ for i = start:start+n-1
     end
         
     % Get the scaling factor to estimate position.
-    alpha = M(1, 1);
+    alpha = 1/M(1, 1);
     
     % Add to result
     % Distance results

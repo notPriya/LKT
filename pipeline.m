@@ -149,8 +149,8 @@ for i = start:start+n-1
     % Distance Estimation
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
-    alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (1 - alpha)*510*(1/250)] + ...
+    alpha = 1/M(1, 1);
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (-1 + alpha)*510*(1/250)] + ...
                TrackedObject.template_pos(index, :)';
     
     % Get the scale ratio to estimate position from joint tracking.
@@ -236,7 +236,7 @@ for i = start:start+n-1
         phi = 0.7;
     end
 %     circle.state(1:3) = phi*circle.state(1:3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(1:3) - pos(1:3)));
-%     circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
+    circle.state(3) = phi*circle.state(3)+(1-phi).*(.1*pipe_radius*camera_f./(initial_pos(3) - pos(3)));
     
     % If we are tracking too big a circle reinitialize it.
     % Or if the circle goes off the screen reinitialize it.
@@ -310,8 +310,22 @@ if visualize
         % Show deviations from the original template.
         subplot(2, 2, 3);
         imagesc(abs(T - template));
+        
+        subplot(2, 2, 4);
+        % Estimate the position of the next circle based on the prior information.
+        center_range = round([.95 1.06]*circle.state(3));
+        center_range = [min(-5+floor(circle.state(3)), center_range(1)) max(5+ceil(circle.state(3)), center_range(2))];
+        % HACK: keep the smaller circle from collapsing into itself.
+        if (center_range(1) < 40)
+            center_range = [40 max(center_range(2), 45)];
+        end
+        I2 = preprocessImage(frames(:, :, :, i+1), true, false);
+        [center, radius] = imfindcircles(I2, center_range, 'EdgeThreshold', .05, 'Sensitivity', .985);
+        imshow(uint8(I2));
+        viscircles(center, radius);
 
-        pause(0.1);
+        drawnow;
+%         pause(0.1);
     end
 end
 
