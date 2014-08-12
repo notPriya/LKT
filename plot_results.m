@@ -1,5 +1,5 @@
 % Which results to plot.
-pipe_name = 'pattern_2';
+pipe_name = 'pattern_1';
 
 % Get the correct scale factor.
 if strncmp(pipe_name, 'crawlerTop', 10)
@@ -23,23 +23,23 @@ if strncmp(pipe_name, 'crawlerTop', 10)
 else
     load([pipe_name '_groundtruth.mat']);
 
-    groundtruth = camera_pos(:, [1, 2]);
-    groundtruth_angle = -camera_pos(:, 3);
+    groundtruth = camera_pos(1:511, [1, 2]);
+    groundtruth_angle = -camera_pos(1:511, 3);
 end
 
 % Get the LKT results.
 load([pipe_name '_lkt_results.mat']);
 
 % Find nearest neighbor in groundtruth path.
-lkt_dist = abs(scale_factor/camera_f*pos(:, 1:2) - groundtruth);
-lkt_dist_th = abs(pos(:, 4) - groundtruth_angle);
+lkt_dist = abs(scale_factor/camera_f*pos(1:511, 1:2) - groundtruth);
+lkt_dist_th = abs(pos(1:511, 4) - groundtruth_angle);
 
 % Get the LKT and tracker results.
 load([pipe_name '_comb_results.mat']);
 
 % Find nearest neighbor in groundtruth path.
-comb_dist = abs(scale_factor/camera_f*pos(:, 1:2) - groundtruth);
-comb_dist_th = abs(pos(:, 4) + groundtruth_angle);
+comb_dist = abs(scale_factor/camera_f*pos(1:511, 1:2) - groundtruth);
+comb_dist_th = abs(pos(1:511, 4) + groundtruth_angle);
 
 % Plot the xy results.
 % Setup the figure.
@@ -71,6 +71,7 @@ title('Error in Position estimation of LKT and Tracking');
 xlabel('Frame Number');
 ylabel('Error in Position (m)');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
+xlim([0 550]);
 
 %% Plot the angle results.
 % Setup the figure.
@@ -93,5 +94,7 @@ title('Error in Orientation estimation of LKT and Tracking');
 xlabel('Frame Number');
 ylabel('Error in Orientation (degrees)');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
+xlim([0 550]);
 
-results = [mean(sum(lkt_dist.^2, 2)) std(sum(lkt_dist.^2, 2)) mean(lkt_dist_th) std(lkt_dist_th); mean(sum(comb_dist.^2, 2)) std(sum(comb_dist.^2, 2)) mean(comb_dist_th) std(comb_dist_th)];
+results = [sum(sum(lkt_dist.^2, 2)) std(sum(lkt_dist.^2, 2)) mean(lkt_dist_th) std(lkt_dist_th);
+           sum(sum(comb_dist.^2, 2)) std(sum(comb_dist.^2, 2)) mean(comb_dist_th) std(comb_dist_th)];

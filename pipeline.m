@@ -159,7 +159,7 @@ for i = start:start+n-1
     % Use the joint tracking if the circle is real and the position
     % doesnt need to be updated.
     % HACKKK FOR REAL VIDEOS.
-    gamma = [0.7; 1; 1; .5]; % Mixing factor.
+    gamma = [0.8; 1; 1; .5]; % Mixing factor.
     % HACKKK FOR BAD DATA.
     if abs(lkt_pos(4) - temp_pos(4)) >= 10
         gamma(4) = 1;
