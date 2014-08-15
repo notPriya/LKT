@@ -19,8 +19,9 @@ end
 % Setup the email client.
 setup_mail;
 
-start = 1;
-n = size(frames, 4) - start;
+start = 100;
+% n = size(frames, 4) - start;
+n=300;
 visualize = false;
 
 % Scale factor for the crawler.
@@ -120,6 +121,8 @@ save([pipe_name '_lkt_results.mat'], 'pos');
 %% Visualize                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if visualize
+    mov = VideoWriter('crawler_lkt_results.avi');
+    open(mov);
     for i = start:start+n-1
         % Extract the image.
         I = preprocessImage(frames(:,:,:,i+1), true, false);
@@ -136,16 +139,19 @@ if visualize
         template = uint8(template);
 
         % Show the template.
-        subplot(2, 1, 1);
+%         subplot(2, 1, 1);
         imshow(template);
-        title(i);
+%         title(i);
         
         % Show deviations from the original template.
-        subplot(2, 1, 2);
-        imagesc(abs(T - template));
+%         subplot(2, 1, 2);
+%         imagesc(abs(T - template));
 
-        pause(0.3);
+%         pause(0.3);
+        writeVideo(mov, gcf);
+        close;
     end
+    close(mov);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
