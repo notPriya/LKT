@@ -34,12 +34,25 @@ load([pipe_name '_lkt_results.mat']);
 lkt_dist = abs(scale_factor/camera_f*pos(1:511, 1:2) - groundtruth);
 lkt_dist_th = abs(pos(1:511, 4) - groundtruth_angle);
 
+meow1 = sum(lkt_dist.^2, 2);
+for i=1:511
+    lkt_rms(i) = sqrt(sum(meow1(1:i)));
+    lkt_rms_th(i) = sqrt(sum(lkt_dist_th(1:i).^2));
+end
+
 % Get the LKT and tracker results.
 load([pipe_name '_comb_results.mat']);
 
 % Find nearest neighbor in groundtruth path.
 comb_dist = abs(scale_factor/camera_f*pos(1:511, 1:2) - groundtruth);
 comb_dist_th = abs(pos(1:511, 4) + groundtruth_angle);
+
+meow1 = sum(comb_dist.^2, 2);
+for i=1:511
+    comb_rms(i) = sqrt(sum(meow1(1:i)));
+    comb_rms_th(i) = sqrt(sum(comb_dist_th(1:i).^2));
+end
+
 
 % Plot the xy results.
 % Setup the figure.
@@ -55,8 +68,12 @@ hold on;
 % figure; hold on;
 % plot(pi/180*comb_dist_th, 'g--', 'LineWidth', 2);
 % plot(pi/180*lkt_dist_th, 'b--', 'LineWidth', 2);
-plot(sqrt(sum(lkt_dist.^2, 2)), 'b', 'LineWidth', 2);
-plot(sqrt(sum(comb_dist.^2, 2)), 'g', 'LineWidth', 2);
+
+% plot(sqrt(sum(lkt_dist.^2, 2)), 'b', 'LineWidth', 2);
+% plot(sqrt(sum(comb_dist.^2, 2)), 'g', 'LineWidth', 2);
+
+plot(lkt_rms, 'b', 'LineWidth', 2);
+plot(comb_rms, 'g', 'LineWidth', 2);
 
 % Plot the marker position if this is real data.
 if ~strncmp(pipe_name, 'crawlerTop', 10)
@@ -67,9 +84,9 @@ if ~strncmp(pipe_name, 'crawlerTop', 10)
 end
 
 % Add title, axis labels, and stuff.
-title('Error in Position estimation of LKT and Tracking');
-xlabel('Frame Number');
-ylabel('Error in Position (m)');
+title('Root Mean Square Error in Position Estimation');
+xlabel('Time (Frames)');
+ylabel('RMS Error');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
 xlim([0 550]);
 
@@ -80,8 +97,12 @@ subplot(2, 1, 2);
 hold on;
 
 % Plot the main results.
-plot(lkt_dist_th, 'b', 'LineWidth', 2);
-plot(comb_dist_th, 'g', 'LineWidth', 2);
+% plot(lkt_dist_th, 'b', 'LineWidth', 2);
+% plot(comb_dist_th, 'g', 'LineWidth', 2);
+
+plot(lkt_rms_th, 'b', 'LineWidth', 2);
+plot(comb_rms_th, 'g', 'LineWidth', 2);
+
 
 % Plot the marker orientation if this is real data.
 if ~strncmp(pipe_name, 'crawlerTop', 10)
@@ -90,9 +111,9 @@ if ~strncmp(pipe_name, 'crawlerTop', 10)
 end
 
 % Add title, axis labels, and stuff.
-title('Error in Orientation estimation of LKT and Tracking');
-xlabel('Frame Number');
-ylabel('Error in Orientation (degrees)');
+title('Root Mean Square Error in Orientation Estimation');
+xlabel('Time (Frames)');
+ylabel('RMS Error');
 legend('LKT', 'LKT with Tracking', 'AR Tag Estimate');
 xlim([0 550]);
 
