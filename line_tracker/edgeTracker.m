@@ -3,24 +3,21 @@
 function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips, previous_line, evaluation)
 
     % Model parameters.
-    A = [eye(3) eye(3); zeros(3) eye(3)];
-    H = [eye(3) zeros(3)];
+    A = [eye(2) eye(2); zeros(2) eye(2)];
+    H = [eye(2) zeros(2)];
 
     % Uncertianty of the state (robot movement).
-    Q = [0 0 0 0 0 0;
-         0 0 0 0 0 0;
-         0 0 0 0 0 0;
-         0 0 0 5 0 0;
-         0 0 0 0 5 0;
-         0 0 0 0 0 1];
+    Q = [0 0 0 0;
+         0 0 0 0;
+         0 0 5 0;
+         0 0 0 5];
     
     % Uncertainty of the measurement (line prediction).
-    R = [10 0 0;
-         0 10 0;
-         0 0 5];
+    R = [5 0;
+         0 5];
      
     % Measurement rejection Threshold
-    error_threshold = 15;
+    error_threshold = Inf;
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Time Update (Prediction)          %
@@ -43,7 +40,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % Pretend we got the predicted line as our measurement to keep the
         % covariance low.
         if ~found_line
-            measurement = state_prior(1:3);
+            measurement = state_prior(1:2);
             previous_line.skip = previous_line.skip + 1;
         end
     else
@@ -51,7 +48,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % HACK: this makes sure that we arent going in the direction of the
         % update to our measurement in the next step.
         if ~isempty(measurement)
-            state_prior(1:3) = measurement;
+            state_prior(1:2) = measurement;
 %             if max_num_skips >= 2
 %                 state_prior(4:6) = 0;
 %             end
@@ -78,7 +75,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         % If we are throwing out a line, but we are allowed to skip, use
         % the prior as our measurement to keep covariance from growing.
         if ~found_line
-            measurement = state_prior(1:3);
+            measurement = state_prior(1:2);
             previous_line.skip = previous_line.skip + 1;
         end
     end
@@ -101,7 +98,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         state_posterior = state_prior + kalman_gain * (measurement - H * state_prior);
 
         % Update the covariance measure:  P_k = (I - K*H) P_k
-        covariance_posterior = (eye(6) - kalman_gain * H) * covariance_prior;
+        covariance_posterior = (eye(4) - kalman_gain * H) * covariance_prior;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,7 +118,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         sigma = sqrt(covariance_posterior);
         
         % Show the image.
-        imshow(uint8(I));
+        imshow(uint8(I'));
         hold on;
         % Plot the line.
         if ~isempty(line)
@@ -168,24 +165,28 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         angle_delta = mod(new_lines(:, 3) - predicted_line(3), 360);
         angle_delta(angle_delta > 180) = 360 - angle_delta(angle_delta > 180);
         angle_score = (180 - angle_delta)./180;
+
+        rho_diff = abs(new_lines(:, 4) - predicted_line(4));
+        rho_diff = (distance_max - rho_diff)./distance_max;
+        rho_diff(rho_diff <= 0) = epsilon;
         
-        % Compute the features for difference to predicted line.
-        % This one does difference from the center of the predicted line in
-        % the x direction.
-        x_diff = abs(new_lines(:, 1) - predicted_line(1));
-        x_diff = (distance_max - x_diff)./distance_max;
-        % If the we are further than the approximate max, give a low score.
-        x_diff(x_diff <= 0) = epsilon;
-                
-        % This one does difference from the center of the predicted line in
-        % the y direction.
-        y_diff = abs(new_lines(:, 2) - predicted_line(2));
-        y_diff = (distance_max - y_diff)./distance_max;
-        % If the we are further than the approximate max, give a low score.
-        y_diff(y_diff <= 0) = epsilon;
+%         % Compute the features for difference to predicted line.
+%         % This one does difference from the center of the predicted line in
+%         % the x direction.
+%         x_diff = abs(new_lines(:, 1) - predicted_line(1));
+%         x_diff = (distance_max - x_diff)./distance_max;
+%         % If the we are further than the approximate max, give a low score.
+%         x_diff(x_diff <= 0) = epsilon;
+%                 
+%         % This one does difference from the center of the predicted line in
+%         % the y direction.
+%         y_diff = abs(new_lines(:, 2) - predicted_line(2));
+%         y_diff = (distance_max - y_diff)./distance_max;
+%         % If the we are further than the approximate max, give a low score.
+%         y_diff(y_diff <= 0) = epsilon;
                 
         % Compute the features.
-        f = [angle_score x_diff y_diff];
+        f = [angle_score rho_diff];
         f = log(f);  % Compute the negative log of scores.
     end
 
@@ -196,7 +197,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
         
         % Put the lines into a usable struct.
         for i=1:length(lines)
-            center = mean([lines(i).point1; lines(i).point2]);
+            center = [0 0];
             new_lines(i, :) = [center lines(i).theta lines(i).rho];
         end
 
@@ -220,7 +221,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
             end
             
             % The measurement is the best line.
-            measurement = [new_lines(1, 1:3)]';
+            measurement = [new_lines(1, [4 3])]';
             line = lines(1);
         end
     end
@@ -240,7 +241,7 @@ function [new_line, weighted_norm, line] = edgeTracker(I, weights, max_num_skips
             % TODO: what if the measurement is bad.
 
             % The measurement is the best line.
-            measurement = [center lines(1).theta]';
+            measurement = [lines(1).rho lines(1).theta]';
             line = lines(1);
         end
     end

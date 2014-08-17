@@ -18,17 +18,18 @@ start = 1;
 n = size(frames, 4) - start;
 
 % Plotting stuff.
-evaluation = true;
+evaluation = false;
 
 % Prior on the beam widths.
 beam_width = 0.0508;  %% 2 inches for half a beam.
 
 % Scale factor to go from pixels to real world units.
-scale_factor = 1;
+scale_factor = 0;
 camera_f = 510;
 
 % Estimated position of the robot.
 estimates = zeros(n, 1);
+widths = NaN(n, 1);
 
 % Least squares matrix.
 A = [];
@@ -60,7 +61,11 @@ for i=start:start+n
 
         % Solve the least squares solution.
         scale_factor = A\b;
+        
+        % Save off when the detections occur.
+        widths(i) = pix_width;
     end
+    
     
     % Save off the scale factor as the current estimate.
     estimates(i) = scale_factor;
@@ -86,5 +91,4 @@ for i=start:start+n
     end
 
 end
-
 

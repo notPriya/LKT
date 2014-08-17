@@ -14,20 +14,20 @@ if ~exist('frames', 'var')
 end
 
 % Initialize frame variables.
-start = 1;
+start = 170;
 n = size(frames, 4) - start;
 
 % Plotting stuff.
-evaluation = true;
+evaluation = false;
 
 % Initialize the first line to track.
-line_data.state = zeros(6, 1);
-line_data.sigma = eye(6);
+line_data.state = zeros(4, 1);
+line_data.sigma = eye(4);
 line_data.real = false;
 line_data.skip = Inf;
 
 % Initialize the weights.
-weights = [0; 3; 1];
+weights = [1; 1];
 num_skips = 3;
 
 % Scale factor to go from pixels to real world units.
@@ -54,7 +54,7 @@ for i=start:start+n
     end
     
     % Get the preprocessed image.
-    I = preprocessImage(frames(:,:,:,i), true, false, [20 10]);
+    I = preprocessImage(frames(:,:,:,i), true, false, [5 2]);
     I = rot90(I, -1);
     [line_data] = edgeTracker(I, weights, num_skips, line_data, evaluation);
     
