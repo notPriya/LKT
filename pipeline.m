@@ -149,14 +149,12 @@ for i = start:start+n-1
     % Distance Estimation
     %%%%%%%%%%%%%%%%%%%%%
     % Get the scaling factor to estimate position from LKT
-    alpha = M(1, 1);
-    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (alpha - 1)*camera_f] + ...
+    alpha = 1/M(1, 1);
+    lkt_pos = [M(1, 3)/alpha; M(2, 3)/alpha; (-1 + alpha)*510*(1/250)] + ...
                TrackedObject.template_pos(index, :)';
-   
+    
     % Get the scale ratio to estimate position from joint tracking.
     ratio = pipe_radius/circle.state(3);
-    
-    lkt_pos = .1 * ratio * lkt_pos;
     
     % Convert measurements from pixels to deci-feet.
     delta = .1* [(circle.state(1) - size(frames, 2)/2) * ratio; ...
@@ -175,7 +173,7 @@ for i = start:start+n-1
     % doesnt need to be updated.
     gamma = 1; % Mixing factor.
     if circle.real && ~update_pos
-        gamma = .6;
+        gamma = 0.6;
     end
     
     % Combine the LKT position estimate and the joint tracking position
@@ -347,7 +345,7 @@ plot(start:start+n-1, TrackedObject.jt_pos(:, 3)*0.3048*0.22, 'g');
 %% Save to a PNG file with today's date and time.
 date_string = datestr(now,'yy_mm_dd_HH_MM');
 figure_filename = [pipe_name '_results_' date_string '.png'];
-% saveas(gcf, figure_filename , 'png');
+saveas(gcf, figure_filename , 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Send Email to the user.     %
@@ -365,7 +363,7 @@ message_format = ['Video:\t\t\t%s\n' ...
 message = sprintf(message_format, pipe_name, start, start+n-1, mean(TrackedObject.time), sum(TrackedObject.time));
 
 
-% emailResults(message, figure_filename);
+emailResults(message, figure_filename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Clean up environment.       %
